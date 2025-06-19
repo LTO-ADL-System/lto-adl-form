@@ -10,7 +10,7 @@ const NavigationHeader = () => {
     };
 
     return (
-        <nav className="bg-[#03267F] shadow-lg flex items-center justify-between py-3 px-28 mx-0 fixed top-0 left-0 w-full">
+        <nav className="bg-[#03267F] shadow-lg flex items-center justify-between py-4.5 px-28 mx-0 fixed top-0 left-0 w-full">
             <div className="flex items-center gap-16">
                 <Link to="/">
                     <span className="flex items-center justify-center gap-3">
@@ -21,9 +21,7 @@ const NavigationHeader = () => {
                 {/*Link to Home*/}
                 <Link
                     to="/"
-                    className={`group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl  transition duration-300 relative ${
-                        isActive('/') ? 'text-white' : 'text-white'
-                    }`}
+                    className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -36,16 +34,14 @@ const NavigationHeader = () => {
                     Home
                     {/*active tab indicator */}
                     {isActive('/') && (
-                        <div className="absolute bottom-[-12px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
+                        <div className="absolute bottom-[-18px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
                     )}
                 </Link>
 
                 {/*Link to Application*/}
                 <Link
                     to="/application"
-                    className={`group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative ${
-                        isActive('/application') ? 'text-white' : 'text-white'
-                    }`}
+                    className="group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +54,7 @@ const NavigationHeader = () => {
                     Application
                     {/*active tab indicator */}
                     {isActive('/application') && (
-                        <div className="absolute bottom-[-12px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
+                        <div className="absolute bottom-[-18px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
                     )}
                 </Link>
             </div>
@@ -68,9 +64,7 @@ const NavigationHeader = () => {
                 {/*Link to Profile*/}
                 <Link
                     to="/profile"
-                    className={`group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative ${
-                        isActive('/profile') ? 'text-white' : 'text-white'
-                    }`}
+                    className="group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -83,7 +77,7 @@ const NavigationHeader = () => {
                     Profile
                     {/*active tab indicator */}
                     {isActive('/profile') && (
-                        <div className="absolute bottom-[-12px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
+                        <div className="absolute bottom-[-18px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
                     )}
                 </Link>
             </div>
