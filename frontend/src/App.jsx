@@ -12,54 +12,88 @@ import LandingPage from './routes/LandingPage.jsx';
 import SignIn from './routes/SignIn.jsx';
 import BottomBorder from "./components/BottomBorder.jsx";
 
-// PROTECTED PAGES (Create these as simple placeholder components for now)
+// PROTECTED PAGES
 import Home from './routes/Home.jsx';
 import Profile from "./routes/Profile.jsx";
 import Application from './routes/Application.jsx';
 
 function App() {
-    // Authentication state
+    // PROTOTYPE: Mock authentication state for UI testing
+    // TODO: Replace with real authentication when backend is ready
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const location = useLocation();
 
-    // Check if user is logged in when app loads
-    useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            const userData = JSON.parse(savedUser);
-            setCurrentUser(userData);
-            setIsAuthenticated(true);
-        }
-    }, []);
+    // PROTOTYPE: Comment out real authentication check
+    // TODO: Implement real authentication check with backend
+    // useEffect(() => {
+    //     const checkAuthStatus = async () => {
+    //         try {
+    //             const response = await fetch('/api/auth/verify', {
+    //                 headers: {
+    //                     'Authorization': `Bearer ${localStorage.getItem('token')}`
+    //                 }
+    //             });
+    //             if (response.ok) {
+    //                 const userData = await response.json();
+    //                 setCurrentUser(userData);
+    //                 setIsAuthenticated(true);
+    //             }
+    //         } catch (error) {
+    //             console.error('Auth check failed:', error);
+    //         }
+    //     };
+    //     checkAuthStatus();
+    // }, []);
 
-    // Mock login function
-    const handleLogin = (email, password) => {
-        // Simulate login validation (you can add any email/password combo you want)
+    // PROTOTYPE: Mock login function for UI testing
+    // TODO: Replace with real API call to backend
+    const handleLogin = async (email, password) => {
+        // MOCK: Simulate successful login for any email/password
+        // TODO: Replace with real authentication
+        // try {
+        //     const response = await fetch('/api/auth/login', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify({ email, password }),
+        //     });
+        //
+        //     if (response.ok) {
+        //         const { user, token } = await response.json();
+        //         localStorage.setItem('token', token);
+        //         setCurrentUser(user);
+        //         setIsAuthenticated(true);
+        //         return { success: true, user };
+        //     } else {
+        //         const errorData = await response.json();
+        //         return { success: false, message: errorData.message };
+        //     }
+        // } catch (error) {
+        //     return { success: false, message: 'Login failed. Please try again.' };
+        // }
+
+        // PROTOTYPE: Mock successful login
         if (email && password) {
-            const userData = {
+            const mockUser = {
                 id: 1,
-                name: email.split('@')[0], // Use part of email as name
+                name: email.split('@')[0],
                 email: email,
-                loginTime: new Date().toISOString()
             };
-
-            // Save to localStorage
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-
-            // Update state
-            setCurrentUser(userData);
+            setCurrentUser(mockUser);
             setIsAuthenticated(true);
-
-            return { success: true, user: userData };
+            return { success: true, user: mockUser };
         }
-
-        return { success: false, message: 'Invalid credentials' };
+        return { success: false, message: 'Please enter email and password' };
     };
 
-    // Mock register function
-    const handleRegister = (name, email, password, confirmPassword) => {
-        // Basic validation
-        if (!name || !email || !password) {
+    // PROTOTYPE: Mock register function for UI testing
+    // TODO: Replace with real API call to backend
+    // TODO: Add handler for emails that already exists
+    const handleRegister = async (email, password, confirmPassword) => {
+        // Basic client-side validation
+        if (!email || !password) {
             return { success: false, message: 'All fields are required' };
         }
 
@@ -71,37 +105,67 @@ function App() {
             return { success: false, message: 'Password must be at least 6 characters' };
         }
 
-        // Create user data
-        const userData = {
-            id: Date.now(), // Simple ID generation
+        // TODO: Replace with real API call
+        // try {
+        //     const response = await fetch('/api/auth/register', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify({ name, email, password }),
+        //     });
+        //
+        //     if (response.ok) {
+        //         const { user, token } = await response.json();
+        //         localStorage.setItem('token', token);
+        //         setCurrentUser(user);
+        //         setIsAuthenticated(true);
+        //         return { success: true, user };
+        //     } else {
+        //         const errorData = await response.json();
+        //         return { success: false, message: errorData.message };
+        //     }
+        // } catch (error) {
+        //     return { success: false, message: 'Registration failed. Please try again.' };
+        // }
+
+        // PROTOTYPE: Mock successful registration
+        const mockUser = {
+            id: Date.now(),
             name: name,
             email: email,
-            registrationTime: new Date().toISOString()
         };
-
-        // Save to localStorage
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-
-        // Update state
-        setCurrentUser(userData);
+        setCurrentUser(mockUser);
         setIsAuthenticated(true);
-
-        return { success: true, user: userData };
+        return { success: true, user: mockUser };
     };
 
-    // Logout function
-    const handleLogout = () => {
-        localStorage.removeItem('currentUser');
+    // PROTOTYPE: Mock logout function
+    // TODO: Replace with real API call to backend
+    const handleLogout = async () => {
+        // TODO: Call backend to invalidate session
+        // try {
+        //     await fetch('/api/auth/logout', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Authorization': `Bearer ${localStorage.getItem('token')}`
+        //         }
+        //     });
+        // } catch (error) {
+        //     console.error('Logout error:', error);
+        // }
+        // localStorage.removeItem('token');
+
+        // PROTOTYPE: Mock logout
         setCurrentUser(null);
         setIsAuthenticated(false);
     };
 
-    // Determine which navbar to show
+    // Determine which navbar to show based on authentication status
     const showOnboardingNav = !isAuthenticated;
     const showAuthenticatedNav = isAuthenticated;
 
-  return (
-    <>
+    return (
         <div className="min-h-screen flex flex-col bg-red-800">
             {/* Conditional Navigation */}
             {showOnboardingNav && <OnboardingNavBar />}
@@ -109,7 +173,7 @@ function App() {
 
             {/* Routes */}
             <Routes>
-                {/* Public Routes */}
+                {/* Public Routes - Accessible when not authenticated */}
                 <Route
                     path="/"
                     element={
@@ -137,7 +201,7 @@ function App() {
                     }
                 />
 
-                {/* Protected Routes */}
+                {/* Protected Routes - Redirect to signin if not authenticated */}
                 <Route
                     path="/home"
                     element={
@@ -157,18 +221,17 @@ function App() {
                     }
                 />
 
-                {/* Catch all route */}
+                {/* Catch all route - redirect based on auth status */}
                 <Route
                     path="*"
                     element={<Navigate to={isAuthenticated ? "/home" : "/"} replace />}
                 />
             </Routes>
 
-            {/* Show BottomBorder only on public pages */}
+            {/*show BottomBorder only on public pages*/}
             {showOnboardingNav && <BottomBorder />}
         </div>
-    </>
-  )
+    );
 }
 
-export default App
+export default App;

@@ -1,4 +1,4 @@
-//frontend/src/routes/SignIn.jsx
+// frontend/src/routes/SignIn.jsx
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -6,7 +6,7 @@ import MadaltoText from "../assets/madali_to.svg";
 import AuthBg from "../assets/auth_bg.svg";
 import { IoIosEye, IoIosEyeOff } from "react-icons/io";
 
-const SignIn = () => {
+const SignIn = ({ onLogin }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -14,6 +14,7 @@ const SignIn = () => {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const handleInputChange = (e) => {
@@ -22,18 +23,30 @@ const SignIn = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+        // Clear error when user starts typing
+        if (error) setError('');
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setError('');
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            // PROTOTYPE: Use the onLogin function passed from App.jsx
+            const result = await onLogin(formData.email, formData.password);
+
+            if (result.success) {
+                // Navigate to home page after successful sign in
+                navigate('/home');
+            } else {
+                setError(result.message || 'Sign in failed. Please try again.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+        } finally {
             setIsLoading(false);
-            // Navigate to home page after successful sign in
-            navigate('/');
-        }, 1500);
+        }
     };
 
     const handleShowPassword = () => {
@@ -65,6 +78,13 @@ const SignIn = () => {
                         <div className="bg-white p-4 md:p-8 flex flex-col justify-center">
                             <div className="max-w-sm mx-auto w-full">
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* Error Message */}
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                                            {error}
+                                        </div>
+                                    )}
+
                                     {/* Email Field */}
                                     <div>
                                         <label htmlFor="email" className="block text-sm font-medium text-[#03267F] mb-2">
@@ -79,6 +99,7 @@ const SignIn = () => {
                                             className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03267F] focus:border-transparent"
                                             placeholder="Enter your email"
                                             required
+                                            disabled={isLoading}
                                         />
                                     </div>
 
@@ -97,6 +118,7 @@ const SignIn = () => {
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03267F] focus:border-transparent pr-12"
                                                 placeholder="Enter your password"
                                                 required
+                                                disabled={isLoading}
                                             />
                                             <p onClick={handleShowPassword} className="pr-1 cursor-pointer text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 hover:text-[#03267F] text-xl">
                                                 {showPassword ? <IoIosEye /> : <IoIosEyeOff />}
@@ -113,6 +135,7 @@ const SignIn = () => {
                                                 checked={formData.rememberMe}
                                                 onChange={handleInputChange}
                                                 className="mr-2 h-4 w-4 accent-[#03267F] custom-checkbox rounded"
+                                                disabled={isLoading}
                                             />
                                             <span className="text-[#03267F]/80">Remember Me</span>
                                         </label>
