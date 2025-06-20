@@ -1,4 +1,4 @@
-// frontend/src/routes/Register.jsx
+//frontend/src/routes/Register.jsx
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
