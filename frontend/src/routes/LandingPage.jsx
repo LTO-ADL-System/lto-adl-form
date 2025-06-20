@@ -1,3 +1,5 @@
+//frontend/src/routes/LandingPage.jsx
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import MadaltoText from '../assets/madali_to.svg';
