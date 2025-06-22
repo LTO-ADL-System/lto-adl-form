@@ -55,7 +55,7 @@ const SignIn = ({ onLogin }) => {
 
     return (
         <div className="min-h-screen bg-[#F8F8F8] flex items-center justify-center p-4">
-            <main className="w-full max-w-6xl mx-auto">
+            <main className="w-full max-w-[90%] mx-auto">
                 {/* card container */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full h-[70vh]">
                     <div className="grid lg:grid-cols-2 h-full">
