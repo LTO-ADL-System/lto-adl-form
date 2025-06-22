@@ -15,14 +15,14 @@ const Home = () => {
             {/* main content area */}
             <div className="flex-1 flex items-stretch p-2 p-4 lg:p-12 bg-gray-100">
                 <main className="w-full max-w-full mx-auto flex flex-col">
-                    {/* card container  */}
+                    {/* card container */}
                     <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg px-4 sm:px-8 lg:px-24 py-6 lg:py-12 overflow-hidden w-full lg:w-[90%] flex-1 mx-auto flex flex-col border-2 lg:border-4 min-h-0">
                         {/* header */}
                         <div className="flex mb-4 lg:mb-6 flex-shrink-0">
                             <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-[#0433A9]">Welcome Back!</h1>
                         </div>
 
-                        {/* Ddsktop Layout */}
+                        {/* desktop layout */}
                         <div className="hidden lg:grid lg:grid-cols-[1fr_420px] gap-7 flex-1 min-h-0">
                             {/* left column - main content */}
                             <div className="flex flex-col min-h-0 gap-7">
@@ -42,22 +42,53 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* mobile layout - stacked cards for small screen */}
+                        {/* mobile Layout - stacked cards for small screens */}
                         <div className="flex flex-col gap-4 lg:hidden flex-1 min-h-0">
                             {/* main content card */}
                             <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6 flex-1 flex flex-col min-h-0">
                                 <DashboardContent status={applicationStatus} />
                             </div>
 
-                            {/* recent activity card  */}
+                            {/* recent activity card */}
                             <div className="bg-white rounded-3xl shadow-md border border-gray-200 border-l-4 border-l-[#0433A9] py-6 px-6 flex flex-col flex-shrink-0">
                                 <RecentActivity status={applicationStatus} />
                             </div>
 
-                            {/* quick links card */}
+                            {/* auick links card */}
                             <div className="bg-white rounded-3xl shadow-md border border-gray-200 py-6 px-6 flex-shrink-0">
                                 <QuickLinks />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* demo status switcher -
+                    TODO: Remove in production */}
+                    <div className="mt-4 text-center">
+                        <div className="inline-flex gap-2 bg-white p-2 rounded-lg shadow">
+                            <button
+                                onClick={() => setApplicationStatus('none')}
+                                className={`px-3 py-1 rounded text-sm ${applicationStatus === 'none' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                No App
+                            </button>
+                            <button
+                                onClick={() => setApplicationStatus('inprogress')}
+                                className={`px-3 py-1 rounded text-sm ${applicationStatus === 'inprogress' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                In Progress
+                            </button>
+                            <button
+                                onClick={() => setApplicationStatus('pending')}
+                                className={`px-3 py-1 rounded text-sm ${applicationStatus === 'pending' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                Pending
+                            </button>
+                            <button
+                                onClick={() => setApplicationStatus('approved')}
+                                className={`px-3 py-1 rounded text-sm ${applicationStatus === 'approved' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                Approved
+                            </button>
                         </div>
                     </div>
                 </main>
@@ -92,7 +123,6 @@ const QuickLinks = () => (
         </div>
     </>
 );
-
 
 // Recent Activity Component
 const RecentActivity = ({ status }) => (
