@@ -10,6 +10,7 @@ import OnboardingNavBar from './components/OnboardingNavBar.jsx';
 import Register from './routes/Register.jsx';
 import LandingPage from './routes/LandingPage.jsx';
 import SignIn from './routes/SignIn.jsx';
+import Confirmation from './routes/Confirmation.jsx';
 import BottomBorder from "./components/BottomBorder.jsx";
 
 // PROTECTED PAGES
@@ -112,7 +113,46 @@ function App() {
         //         headers: {
         //             'Content-Type': 'application/json',
         //         },
-        //         body: JSON.stringify({ name, email, password }),
+        //         body: JSON.stringify({ email, password }),
+        //     });
+        //
+        //     if (response.ok) {
+        //         // DON'T authenticate immediately - let them verify first
+        //         return { success: true, message: 'Registration successful. Please check your email.' };
+        //     } else {
+        //         const errorData = await response.json();
+        //         return { success: false, message: errorData.message };
+        //     }
+        // } catch (error) {
+        //     return { success: false, message: 'Registration failed. Please try again.' };
+        // }
+
+        // PROTOTYPE: Mock successful registration WITHOUT authentication
+        // Store registration data temporarily (in real app, this would be handled by backend)
+        // DON'T set currentUser or isAuthenticated here
+
+        return {
+            success: true,
+            message: 'Registration successful. Please verify your email.',
+            // You can store user data temporarily if needed for the confirmation process
+            pendingUser: {
+                email: email,
+                // Don't store password in real app
+            }
+        };
+    };
+
+    // PROTOTYPE: Mock confirmation/verification function
+    // TODO: Replace with real API call to backend
+    const handleConfirmation = async (email, verificationCode) => {
+        // TODO: Replace with real API call
+        // try {
+        //     const response = await fetch('/api/auth/verify-email', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify({ email, verificationCode }),
         //     });
         //
         //     if (response.ok) {
@@ -126,18 +166,23 @@ function App() {
         //         return { success: false, message: errorData.message };
         //     }
         // } catch (error) {
-        //     return { success: false, message: 'Registration failed. Please try again.' };
+        //     return { success: false, message: 'Verification failed. Please try again.' };
         // }
 
-        // PROTOTYPE: Mock successful registration
-        const mockUser = {
-            id: Date.now(),
-            name: name,
-            email: email,
-        };
-        setCurrentUser(mockUser);
-        setIsAuthenticated(true);
-        return { success: true, user: mockUser };
+        // PROTOTYPE: Mock successful verification
+        // For testing, accept any 6-digit code
+        if (verificationCode && verificationCode.length === 4) {
+            const mockUser = {
+                id: Date.now(),
+                name: email.split('@')[0], // Extract name from email
+                email: email,
+            };
+            setCurrentUser(mockUser);
+            setIsAuthenticated(true);
+            return { success: true, user: mockUser };
+        }
+
+        return { success: false, message: 'Invalid verification code' };
     };
 
     // PROTOTYPE: Mock logout function
@@ -197,6 +242,16 @@ function App() {
                             <Navigate to="/home" replace />
                         ) : (
                             <SignIn onLogin={handleLogin} />
+                        )
+                    }
+                />
+                <Route
+                    path="/confirmation"
+                    element={
+                        isAuthenticated ? (
+                            <Navigate to="/home" replace />
+                        ) : (
+                            <Confirmation onConfirmation={handleConfirmation} />
                         )
                     }
                 />
