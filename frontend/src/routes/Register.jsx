@@ -75,8 +75,8 @@ const Register = ({ onRegister }) => {
             );
 
             if (result.success) {
-                // Navigate to home page after successful registration
-                navigate('/home');
+                // Navigate to confimation page after successful registration
+                navigate('/confirmation');
             } else {
                 setError(result.message || 'Registration failed. Please try again.');
             }
@@ -98,7 +98,7 @@ const Register = ({ onRegister }) => {
 
     return (
         <div className="min-h-screen bg-[#F8F8F8] flex items-center justify-center p-4">
-            <main className="w-full max-w-6xl mx-auto">
+            <main className="w-full max-w-[90%] mx-auto">
                 {/* card container */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full h-[70vh]">
                     <div className="grid lg:grid-cols-2 h-full">
@@ -175,11 +175,8 @@ const Register = ({ onRegister }) => {
                                         {formData.password !== '' && (
                                             <div className="mt-1 text-sm">
                                                 {passwordLengthValid ? (
-                                                    <span className="text-green-600 flex items-center">
-                                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                                                        </svg>
-                                                        {/*Password length is valid (6+ characters)*/}
+                                                    <span className="flex items-center">
+                                                    {/*removed lines for valid indicator*/}
                                                     </span>
                                                 ) : (
                                                     <span className="text-red-600 flex items-center">
@@ -223,10 +220,7 @@ const Register = ({ onRegister }) => {
                                             <div className="mt-1 text-sm">
                                                 {passwordsMatch ? (
                                                     <span className="text-green-600 flex items-center">
-                                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                                                        </svg>
-                                                        Passwords match
+                                                        {/*removed lines for valid indicator*/}
                                                     </span>
                                                 ) : (
                                                     <span className="text-red-600 flex items-center">
