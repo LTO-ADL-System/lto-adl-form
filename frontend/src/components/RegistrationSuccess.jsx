@@ -24,10 +24,9 @@ const RegistrationSuccess = ({ onContinue }) => {
     };
 
     return (
-        <div
-            className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none"
-        >
-            <main className="w-full max-w-6xl mx-auto">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/30 ">
+
+        <main className="w-full max-w-6xl mx-auto">
                 <div className={`bg-white rounded-2xl shadow-lg overflow-hidden w-[90%] h-[75vh] mx-auto transform transition-all duration-300 ease-out pointer-events-auto border border-gray-200 ${
                     isVisible
                         ? 'scale-100 opacity-100 translate-y-0'
