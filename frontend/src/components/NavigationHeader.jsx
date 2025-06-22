@@ -33,7 +33,7 @@ const NavigationHeader = () => {
                     </svg>
                     Home
                     {/*active tab indicator */}
-                    {isActive('/') && (
+                    {isActive('/home') && (
                         <div className="absolute bottom-[-18px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
                     )}
                 </Link>
