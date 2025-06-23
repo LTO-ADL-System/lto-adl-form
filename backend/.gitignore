@@ -145,3 +145,7 @@ Thumbs.db
 
 # Alembic
 alembic/versions/*.pyc
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
