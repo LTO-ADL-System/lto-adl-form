@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_current_applicant, validate_pagination
+from app.api.deps import get_db, get_current_applicant, get_current_user_token, validate_pagination
 from app.crud import crud_applicant, crud_family, crud_employment, crud_emergency, crud_donation
 from app.models.applicant import Applicant
 from app.schemas.applicant import ApplicantUpdate, ApplicantProfile
@@ -15,18 +15,57 @@ from app.schemas.response import ResponseModel, PaginatedResponse
 
 router = APIRouter()
 
+@router.get("/status", response_model=ResponseModel[dict])
+async def get_my_status(
+    db: Session = Depends(get_db),
+    user_data: dict = Depends(get_current_user_token)
+):
+    """Check authenticated user's status - whether they are an applicant or not"""
+    
+    user_email = user_data.get("email")
+    user_uuid = user_data.get("id")
+    
+    if not user_email or not user_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user data",
+        )
+    
+    # Check if applicant record exists
+    applicant = crud_applicant.get_by_uuid(db, user_uuid=user_uuid)
+    
+    if not applicant:
+        applicant = crud_applicant.get_by_email(db, email=user_email)
+    
+    is_applicant = applicant is not None
+    
+    return ResponseModel(
+        success=True,
+        message="User status retrieved successfully",
+        data={
+            "user_id": user_uuid,
+            "email": user_email,
+            "is_applicant": is_applicant,
+            "applicant_id": applicant.applicant_id if is_applicant else None,
+            "message": "You can submit applications and manage your profile" if is_applicant 
+                      else "Submit your first application to become an applicant"
+        }
+    )
+
 @router.get("/me", response_model=ResponseModel[ApplicantProfile])
 async def get_my_profile(
     current_applicant: Applicant = Depends(get_current_applicant)
 ):
     """Get current user's profile"""
     
-    # Calculate age
-    from datetime import date
-    today = date.today()
-    age = today.year - current_applicant.birthdate.year - (
-        (today.month, today.day) < (current_applicant.birthdate.month, current_applicant.birthdate.day)
-    )
+    # Calculate age if birthdate exists
+    age = None
+    if current_applicant.birthdate:
+        from datetime import date
+        today = date.today()
+        age = today.year - current_applicant.birthdate.year - (
+            (today.month, today.day) < (current_applicant.birthdate.month, current_applicant.birthdate.day)
+        )
     
     # Create profile response with computed fields
     profile_data = ApplicantProfile.from_orm(current_applicant)
