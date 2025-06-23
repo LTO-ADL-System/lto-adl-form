@@ -1,38 +1,55 @@
 // frontend/src/routes/Application.jsx
-
 import React, {useState} from 'react';
 import { Clipboard } from 'lucide-react';
 import InitialApplication from "../pages/InitialApplication.jsx";
 import ApplicationType from '../pages/ApplicationType.jsx';
 import PersonalDetails from '../pages/PersonalDetails.jsx';
-
+import LicenseDetails from '../pages/LicenseDetails.jsx';
+// import DocumentDetails from '../pages/DocumentDetails.jsx';
+// import FinalizeDetails from '../pages/FinalizeDetails.jsx';
 
 const Application = () => {
     const [currentComponent, setCurrentComponent] = useState('one');
-
+    
     const onStartApplication = (componentName) => {
         setCurrentComponent(componentName);
     };
-
+    
     const switchToTwo = () => {
         setCurrentComponent('two');
     }
+    
+    // Define the step flow
+    const steps = {
+        'one': { 
+            component: <InitialApplication onStartApplication={switchToTwo} />,
+            showHeader: true
+        },
+        'two': { 
+            component: <ApplicationType onBack={() => setCurrentComponent('one')} onProceed={() => setCurrentComponent('three')} />,
+            showHeader: true
+        },
+        'three': { 
+            component: <PersonalDetails onProceed={() => setCurrentComponent('four')} />,
+            showHeader: false
+        },
+        'four': { 
+            component: <LicenseDetails onProceed={() => setCurrentComponent('five')} />,
+            showHeader: false
+        },
+        // 'five': { 
+        //     component: <DocumentDetails onProceed={() => setCurrentComponent('six')} />,
+        //     showHeader: false
+        // },
+        // 'six': { 
+        //     component: <FinalizeDetails />,
+        //     showHeader: false
+        // }
+    };
 
-    let renderedComponent;
-    if (currentComponent === 'one') {
-        renderedComponent = <InitialApplication onStartApplication={switchToTwo} />;
-    }
-    else if (currentComponent === 'two') {
-        renderedComponent = <ApplicationType onBack={() => setCurrentComponent('one')} onProceed={() => setCurrentComponent('three')} />;
-    }
-    else if (currentComponent === 'three') {
-        renderedComponent = <PersonalDetails />
-    }
-    else {
-        // renderedComponent = <ApplicationType />;
-    }
-
-
+    // Get current step or fallback to initial
+    const currentStep = steps[currentComponent] || steps['one'];
+    
     return (
         <div className="h-screen flex flex-col">
             <div className="h-16 flex-shrink-0"></div>
@@ -41,10 +58,11 @@ const Application = () => {
                 <main className="w-full max-w-full mx-auto flex flex-col min-h-full">
                     {/* card container */}
                     <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg px-4 sm:px-8 lg:px-24 py-6 lg:py-12 w-full lg:w-[90%] mx-auto flex flex-col border-2 lg:border-4 flex-1 min-h-fit">
-                        {currentComponent === 'three' ? (
-                            <PersonalDetails />
+                        {!currentStep.showHeader ? (
+                            // Render form components without header wrapper
+                            currentStep.component
                         ) : (
-                            // other components stay in the padded container with header
+                            // Components with header wrapper
                             <>
                                 {/* Header */}
                                 <div className="flex items-center gap-3 mb-4 lg:mb-6 pb-4 border-b-2 border-gray-200 flex-shrink-0">
@@ -53,7 +71,7 @@ const Application = () => {
                                 </div>
                                 {/* Content area */}
                                 <div className="flex-1">
-                                    {renderedComponent}
+                                    {currentStep.component}
                                 </div>
                             </>
                         )}

@@ -7,7 +7,7 @@ import document from "../assets/documents.svg";
 import finalize from "../assets/finalize.svg";
 import personalDetailsConfig from "../config/personal_details.json";
 
-const PersonalDetails = () => {
+const PersonalDetails = ({onProceed}) => {
     const [formData, setFormData] = useState({});
     const [dynamicOptions, setDynamicOptions] = useState({
         region: [],
@@ -579,7 +579,7 @@ const PersonalDetails = () => {
                                 >
                                     Save & Exit
                                 </button>
-                                <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" onClick={onProceed}>
                                     Proceed
                                 </button>
                             </div>
