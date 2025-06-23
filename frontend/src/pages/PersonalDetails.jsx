@@ -10,8 +10,22 @@ import personalDetailsConfig from "../config/personal_details.json";
 const PersonalDetails = () => {
     const [formData, setFormData] = useState({});
     const [dynamicOptions, setDynamicOptions] = useState({
+        region: [],
         province: [],
-        municipality: []
+        municipality: [],
+        barangay: []
+    });
+    const [loading, setLoading] = useState({
+        regions: false,
+        provinces: false,
+        municipalities: false,
+        barangays: false
+    });
+    const [errors, setErrors] = useState({
+        regions: null,
+        provinces: null,
+        municipalities: null,
+        barangays: null
     });
 
     const steps = [
@@ -21,23 +35,175 @@ const PersonalDetails = () => {
         { name: "Finalize", icon: finalize },
     ];
 
-    // get the regionProvinceMapping from the config
-    const getRegionProvinceMapping = () => {
-        const addressSection = personalDetailsConfig.sections.find(
-            section => section.title === "Address Details"
-        );
-        return addressSection?.regionProvinceMapping || {};
+    const PSGC_API_BASE = 'https://psgc.gitlab.io/api';
+
+    // PSGC API calls
+    // Helper function to format region names
+    const formatRegionName = (regionName) => {
+        // Mapping of region names to their numbers
+        const regionNumbers = {
+            'ILOCOS REGION': 'I',
+            'CAGAYAN VALLEY': 'II', 
+            'CENTRAL LUZON': 'III',
+            'CALABARZON': 'IV-A',
+            'MIMAROPA': 'IV-B',
+            'BICOL REGION': 'V',
+            'WESTERN VISAYAS': 'VI',
+            'CENTRAL VISAYAS': 'VII',
+            'EASTERN VISAYAS': 'VIII',
+            'ZAMBOANGA PENINSULA': 'IX',
+            'NORTHERN MINDANAO': 'X',
+            'DAVAO REGION': 'XI',
+            'SOCCSKSARGEN': 'XII',
+            'CARAGA': 'XIII',
+            'AUTONOMOUS REGION IN MUSLIM MINDANAO': 'ARMM',
+            'CORDILLERA ADMINISTRATIVE REGION': 'CAR',
+            'NATIONAL CAPITAL REGION': 'NCR',
+            'BANGSAMORO AUTONOMOUS REGION IN MUSLIM MINDANAO': 'BARMM'
+        };
+
+        const regionNumber = regionNumbers[regionName.toUpperCase()];
+        if (regionNumber) {
+            return `${regionNumber} - ${regionName}`;
+        }
+        
+        // Fallback for any regions not in the mapping
+        return regionName;
     };
 
-    // get the provinceMunicipalityMapping from the config
-    const getProvinceMunicipalityMapping = () => {
-        const addressSection = personalDetailsConfig.sections.find(
-            section => section.title === "Address Details"
-        );
-        return addressSection?.provinceMunicipalityMapping || {};
+    const fetchRegions = async () => {
+        setLoading(prev => ({ ...prev, regions: true }));
+        setErrors(prev => ({ ...prev, regions: null }));
+        
+        try {
+            const response = await fetch(`${PSGC_API_BASE}/regions`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch regions: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            const regionOptions = data.map(region => ({
+                value: region.code,
+                label: formatRegionName(region.name)
+            }));
+            
+            setDynamicOptions(prev => ({
+                ...prev,
+                region: regionOptions
+            }));
+        } catch (error) {
+            console.error('Error fetching regions:', error);
+            setErrors(prev => ({ 
+                ...prev, 
+                regions: 'Failed to load regions. Please try again.' 
+            }));
+        } finally {
+            setLoading(prev => ({ ...prev, regions: false }));
+        }
     };
 
-// format TIN (XXX-XXX-XXX-XXX)
+    const fetchProvinces = async (regionCode) => {
+        setLoading(prev => ({ ...prev, provinces: true }));
+        setErrors(prev => ({ ...prev, provinces: null }));
+        
+        try {
+            const response = await fetch(`${PSGC_API_BASE}/regions/${regionCode}/provinces`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch provinces: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            const provinceOptions = data.map(province => ({
+                value: province.code,
+                label: province.name
+            }));
+            
+            setDynamicOptions(prev => ({
+                ...prev,
+                province: provinceOptions,
+                municipality: [], // clear dependent dropdowns
+                barangay: []
+            }));
+        } catch (error) {
+            console.error('Error fetching provinces:', error);
+            setErrors(prev => ({ 
+                ...prev, 
+                provinces: 'Failed to load provinces. Please try again.' 
+            }));
+        } finally {
+            setLoading(prev => ({ ...prev, provinces: false }));
+        }
+    };
+
+    const fetchMunicipalities = async (provinceCode) => {
+        setLoading(prev => ({ ...prev, municipalities: true }));
+        setErrors(prev => ({ ...prev, municipalities: null }));
+        
+        try {
+            const response = await fetch(`${PSGC_API_BASE}/provinces/${provinceCode}/cities-municipalities`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch municipalities: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            const municipalityOptions = data.map(municipality => ({
+                value: municipality.code,
+                label: municipality.name
+            }));
+            
+            setDynamicOptions(prev => ({
+                ...prev,
+                municipality: municipalityOptions,
+                barangay: [] // clear dependent dropdown
+            }));
+        } catch (error) {
+            console.error('Error fetching municipalities:', error);
+            setErrors(prev => ({ 
+                ...prev, 
+                municipalities: 'Failed to load municipalities. Please try again.' 
+            }));
+        } finally {
+            setLoading(prev => ({ ...prev, municipalities: false }));
+        }
+    };
+
+    const fetchBarangays = async (municipalityCode) => {
+        setLoading(prev => ({ ...prev, barangays: true }));
+        setErrors(prev => ({ ...prev, barangays: null }));
+        
+        try {
+            const response = await fetch(`${PSGC_API_BASE}/cities-municipalities/${municipalityCode}/barangays`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch barangays: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            const barangayOptions = data.map(barangay => ({
+                value: barangay.code,
+                label: barangay.name
+            }));
+            
+            setDynamicOptions(prev => ({
+                ...prev,
+                barangay: barangayOptions
+            }));
+        } catch (error) {
+            console.error('Error fetching barangays:', error);
+            setErrors(prev => ({ 
+                ...prev, 
+                barangays: 'Failed to load barangays. Please try again.' 
+            }));
+        } finally {
+            setLoading(prev => ({ ...prev, barangays: false }));
+        }
+    };
+
+    // Load regions on component mount
+    useEffect(() => {
+        fetchRegions();
+    }, []);
+
+    // format TIN (XXX-XXX-XXX-XXX)
     const formatTIN = (value) => {
         // remove all non-digit characters
         const digitsOnly = value.replace(/\D/g, '');
@@ -70,71 +236,115 @@ const PersonalDetails = () => {
             [fieldName]: processedValue
         }));
 
-        // handle cascading dropdowns
+        // handle cascading dropdowns for locations
         if (fieldName === 'region') {
             handleRegionChange(value);
         } else if (fieldName === 'province') {
             handleProvinceChange(value);
+        } else if (fieldName === 'municipality') {
+            handleMunicipalityChange(value);
         }
     };
 
-    const handleRegionChange = (selectedRegion) => {
-        const regionProvinceMapping = getRegionProvinceMapping();
-
-        // update province options based on selected region
-        if (selectedRegion && regionProvinceMapping[selectedRegion]) {
-            setDynamicOptions(prev => ({
-                ...prev,
-                province: regionProvinceMapping[selectedRegion],
-                municipality: [] // clear municipality when region changes
-            }));
-        } else {
-            setDynamicOptions(prev => ({
-                ...prev,
-                province: [],
-                municipality: []
-            }));
-        }
-
+    const handleRegionChange = (selectedRegionCode) => {
         // clear dependent field values
         setFormData(prev => ({
             ...prev,
             province: '',
-            municipality: ''
+            municipality: '',
+            barangay: ''
         }));
+
+        // clear dependent options
+        setDynamicOptions(prev => ({
+            ...prev,
+            province: [],
+            municipality: [],
+            barangay: []
+        }));
+
+        // fetch provinces for selected region
+        if (selectedRegionCode) {
+            fetchProvinces(selectedRegionCode);
+        }
     };
 
-    const handleProvinceChange = (selectedProvince) => {
-        const provinceMunicipalityMapping = getProvinceMunicipalityMapping();
-
-        // update municipality options based on selected province
-        if (selectedProvince && provinceMunicipalityMapping[selectedProvince]) {
-            setDynamicOptions(prev => ({
-                ...prev,
-                municipality: provinceMunicipalityMapping[selectedProvince]
-            }));
-        } else {
-            setDynamicOptions(prev => ({
-                ...prev,
-                municipality: []
-            }));
-        }
-
-        // clear municipality value
+    const handleProvinceChange = (selectedProvinceCode) => {
+        // clear dependent field values
         setFormData(prev => ({
             ...prev,
-            municipality: ''
+            municipality: '',
+            barangay: ''
         }));
+
+        // clear dependent options
+        setDynamicOptions(prev => ({
+            ...prev,
+            municipality: [],
+            barangay: []
+        }));
+
+        // fetch municipalities for selected province
+        if (selectedProvinceCode) {
+            fetchMunicipalities(selectedProvinceCode);
+        }
+    };
+
+    const handleMunicipalityChange = (selectedMunicipalityCode) => {
+        // clear dependent field values
+        setFormData(prev => ({
+            ...prev,
+            barangay: ''
+        }));
+
+        // clear dependent options
+        setDynamicOptions(prev => ({
+            ...prev,
+            barangay: []
+        }));
+
+        // fetch barangays for selected municipality
+        if (selectedMunicipalityCode) {
+            fetchBarangays(selectedMunicipalityCode);
+        }
     };
 
     // get options for a field (either static or dynamic)
     const getFieldOptions = (field) => {
-        if (field.dependsOn) {
-            // This is a dependent field, use dynamic options
+        // Check if this is a location field that should use PSGC API data
+        const locationFields = ['region', 'province', 'municipality', 'barangay'];
+        
+        if (locationFields.includes(field.name)) {
             return dynamicOptions[field.name] || [];
         }
+        
+        // For non-location dependent fields, use dynamic options if available
+        if (field.dependsOn) {
+            return dynamicOptions[field.name] || [];
+        }
+        
         // Regular field, use static options
         return field.options || [];
+    };
+
+    const isFieldLoading = (fieldName) => {
+        const loadingMap = {
+            region: loading.regions,
+            province: loading.provinces,
+            municipality: loading.municipalities,
+            barangay: loading.barangays
+        };
+        return loadingMap[fieldName] || false;
+    };
+
+    const getFieldError = (fieldName) => {
+        const errorMap = {
+            region: errors.regions,
+            province: errors.provinces,
+            municipality: errors.municipalities,
+            barangay: errors.barangays
+        };
+        return errorMap[fieldName];
     };
 
     const renderField = (field) => {
@@ -209,7 +419,43 @@ const PersonalDetails = () => {
 
             case 'select':
                 const options = getFieldOptions(field);
-                const isDisabled = (field.dependsOn && !formData[field.dependsOn]) || isConditionallyDisabled;
+                const fieldLoading = isFieldLoading(field.name);
+                const fieldError = getFieldError(field.name);
+                
+                // Check if field should be disabled
+                const locationFields = ['region', 'province', 'municipality', 'barangay'];
+                let isDisabled = isConditionallyDisabled || fieldLoading;
+                
+                if (locationFields.includes(field.name)) {
+                    // For location fields, check dependencies
+                    if (field.name === 'province' && !formData.region) isDisabled = true;
+                    if (field.name === 'municipality' && !formData.province) isDisabled = true;
+                    if (field.name === 'barangay' && !formData.municipality) isDisabled = true;
+                } else if (field.dependsOn && !formData[field.dependsOn]) {
+                    isDisabled = true;
+                }
+
+                // Determine placeholder text
+                let placeholderText = placeholder;
+                if (isConditionallyDisabled) {
+                    placeholderText = 'Same as applicant address';
+                } else if (fieldLoading) {
+                    placeholderText = 'Loading...';
+                } else if (fieldError) {
+                    placeholderText = 'Error loading data';
+                } else if (field.dependsOn && !formData[field.dependsOn]) {
+                    placeholderText = `Select ${field.dependsOn} first`;
+                } else if (locationFields.includes(field.name)) {
+                    const dependencyMap = {
+                        province: 'region',
+                        municipality: 'province', 
+                        barangay: 'municipality'
+                    };
+                    const dependency = dependencyMap[field.name];
+                    if (dependency && !formData[dependency]) {
+                        placeholderText = `Select ${dependency} first`;
+                    }
+                }
 
                 return (
                     <div key={name}>
@@ -223,8 +469,7 @@ const PersonalDetails = () => {
                             disabled={isDisabled}
                         >
                             <option value="" disabled>
-                                {isDisabled && isConditionallyDisabled ? `Same as applicant address` :
-                                    isDisabled ? `Select ${field.dependsOn} first` : placeholder}
+                                {placeholderText}
                             </option>
                             {options?.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -232,6 +477,9 @@ const PersonalDetails = () => {
                                 </option>
                             ))}
                         </select>
+                        {fieldError && (
+                            <p className="text-red-500 text-sm mt-1">{fieldError}</p>
+                        )}
                     </div>
                 );
 
@@ -322,7 +570,6 @@ const PersonalDetails = () => {
                         {/* Form Content Area */}
                         <div className="flex-1 flex flex-col">
                             {personalDetailsConfig.sections.map(section => renderSection(section))}
-
 
                             {/* Navigation buttons */}
                             <div className="flex justify-between items-center mt-auto pt-6">
