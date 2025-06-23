@@ -9,15 +9,24 @@ from app.schemas.applicant import ApplicantCreate, ApplicantUpdate, MinimalAppli
 from app.core.security import get_password_hash, verify_password
 
 class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
-    def get_by_id(self, db: Session, *, applicant_id: str) -> Optional[Applicant]:
-        return db.query(Applicant).filter(Applicant.applicant_id == applicant_id).first()
-    
-    def get_by_uuid(self, db: Session, *, uuid: str) -> Optional[Applicant]:
-        return db.query(Applicant).filter(Applicant.uuid == uuid).first()
-    
+    def get_by_uuid(self, db: Session, *, user_uuid: str) -> Optional[Applicant]:
+        """Get applicant by Supabase UUID (primary key)"""
+        from uuid import UUID
+        if isinstance(user_uuid, str):
+            user_uuid = UUID(user_uuid)
+        return db.query(Applicant).filter(Applicant.uuid == user_uuid).first()
+
     def get_by_email(self, db: Session, *, email: str) -> Optional[Applicant]:
         """Get applicant by email"""
         return db.query(Applicant).filter(Applicant.email == email).first()
+
+    def update_uuid(self, db: Session, *, applicant: Applicant, user_uuid: str) -> Applicant:
+        """Update applicant with Supabase UUID"""
+        applicant.uuid = user_uuid
+        db.add(applicant)
+        db.commit()
+        db.refresh(applicant)
+        return applicant
     
     def get_by_contact(self, db: Session, *, contact_num: str) -> Optional[Applicant]:
         return db.query(Applicant).filter(Applicant.contact_num == contact_num).first()
@@ -45,28 +54,12 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
             educational_attainment=obj_in.educational_attainment.value if obj_in.educational_attainment else None,
             blood_type=obj_in.blood_type.value if obj_in.blood_type else None,
             sex=obj_in.sex.value if obj_in.sex else None,
-            is_organ_donor=obj_in.is_organ_donor,
-            profile_completed=False  # Initially not completed
+            is_organ_donor=obj_in.is_organ_donor
         )
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
         return db_obj
-    
-    def mark_profile_completed(self, db: Session, *, applicant_id: str) -> Optional[Applicant]:
-        """Mark applicant profile as completed"""
-        applicant = self.get_by_id(db, applicant_id=applicant_id)
-        if applicant:
-            applicant.profile_completed = True
-            db.commit()
-            db.refresh(applicant)
-        return applicant
-    
-    def get_incomplete_profiles(self, db: Session, skip: int = 0, limit: int = 100) -> List[Applicant]:
-        """Get applicants with incomplete profiles"""
-        return db.query(Applicant).filter(
-            Applicant.profile_completed == False
-        ).offset(skip).limit(limit).all()
     
     def search(self, db: Session, *, query: str, skip: int = 0, limit: int = 100) -> List[Applicant]:
         """Search applicants by name, contact number, email, or license number"""
@@ -96,9 +89,13 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
             Applicant.is_organ_donor == True
         ).offset(skip).limit(limit).all()
     
+    def get_by_applicant_id(self, db: Session, *, applicant_id: str) -> Optional[Applicant]:
+        """Get applicant by applicant_id (not the primary key)"""
+        return db.query(Applicant).filter(Applicant.applicant_id == applicant_id).first()
+    
     def update_license_number(self, db: Session, *, applicant_id: str, license_number: str) -> Optional[Applicant]:
         """Update applicant's license number"""
-        applicant = self.get_by_id(db, applicant_id=applicant_id)
+        applicant = self.get_by_applicant_id(db, applicant_id=applicant_id)
         if applicant:
             applicant.license_number = license_number
             db.commit()
