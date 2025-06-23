@@ -2227,7 +2227,7 @@
           "label": "Emergency Contact Name",
           "type": "text",
           "placeholder": "Contact Name",
-          "required": true,
+          "required": false,
           "gridColumn": 1
         },
         {
@@ -2235,7 +2235,7 @@
           "label": "Emergency Contact Number",
           "type": "tel",
           "placeholder": "Contact Number",
-          "required": true,
+          "required": false,
           "gridColumn": 1
         },
         {
