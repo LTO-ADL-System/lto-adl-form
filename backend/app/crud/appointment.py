@@ -2,11 +2,23 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, desc
 from datetime import date, datetime, timedelta, time
+from fastapi.encoders import jsonable_encoder
 from app.crud.base import CRUDBase
 from app.models.appointment import Appointment
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
 
 class CRUDAppointment(CRUDBase[Appointment, AppointmentCreate, AppointmentUpdate]):
+    def create(self, db: Session, *, obj_in: AppointmentCreate) -> Appointment:
+        """Create appointment with default status 'Scheduled'"""
+        obj_in_data = jsonable_encoder(obj_in)
+        # Set default status for new appointments
+        obj_in_data['status'] = 'Scheduled'
+        db_obj = self.model(**obj_in_data)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+    
     def get_by_id(self, db: Session, *, appointment_id: str) -> Optional[Appointment]:
         return db.query(Appointment).options(
             joinedload(Appointment.application),
