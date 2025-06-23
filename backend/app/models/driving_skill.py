@@ -14,7 +14,7 @@ class DrivingSkill(Base):
     skill_id = Column(
         String, 
         primary_key=True,
-        server_default=text("'SKLID_' || lpad(nextval('skill_seq')::text, 3, '0')")
+        server_default=text("'SKLID_' || LPAD(nextval('skill_seq')::text, 3, '0')")
     )
     
     # Foreign Key

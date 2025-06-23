@@ -14,7 +14,7 @@ class Donation(Base):
     donation_id = Column(
         String, 
         primary_key=True,
-        server_default=text("'DON_' || lpad(nextval('donation_seq')::text, 3, '0')")
+        server_default=text("'DON_' || LPAD(nextval('donation_seq')::text, 3, '0')")
     )
     
     # Foreign Key

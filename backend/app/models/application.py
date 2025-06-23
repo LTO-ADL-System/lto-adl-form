@@ -50,14 +50,14 @@ class ApplicationType(Base):
     # Relationships
     applications = relationship("LicenseApplication", back_populates="application_type")
 
-class LicenseApplication(Base, TimestampMixin):
+class LicenseApplication(Base):
     __tablename__ = "licenseapplication"
     
     # Auto-generated application ID with format APPID_001, APPID_002, etc.
     application_id = Column(
         String, 
         primary_key=True,
-        server_default=text("'APPID_' || lpad(nextval('application_seq')::text, 3, '0')")
+        server_default=text("'APPID_' || LPAD(nextval('application_seq')::text, 3, '0')")
     )
     
     # Foreign Keys
@@ -67,6 +67,7 @@ class LicenseApplication(Base, TimestampMixin):
     
     # Application details
     submission_date = Column(DateTime(timezone=True), server_default=func.now())
+    last_updated_date = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     rejection_reason = Column(Text)
     additional_requirements = Column(String)
     
@@ -88,7 +89,7 @@ class ApplicationStatusHistory(Base):
     history_id = Column(
         String, 
         primary_key=True,
-        server_default=text("'SHID_' || lpad(nextval('history_seq')::text, 3, '0')")
+        server_default=text("'SHID_' || LPAD(nextval('history_seq')::text, 3, '0')")
     )
     
     # Foreign Keys
@@ -110,7 +111,7 @@ class ApplicationVehicleCategory(Base):
     app_vehicle_id = Column(
         String, 
         primary_key=True,
-        server_default=text("'AVID_' || lpad(nextval('appvehicle_seq')::text, 3, '0')")
+        server_default=text("'AVID_' || LPAD(nextval('appvehicle_seq')::text, 3, '0')")
     )
     
     # Foreign Keys

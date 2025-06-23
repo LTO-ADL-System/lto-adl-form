@@ -17,21 +17,18 @@ if TYPE_CHECKING:
 class Applicant(Base, TimestampMixin):
     __tablename__ = "applicant"
     
-    # Primary key
-    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Primary key - UUID references auth.users(id)
+    uuid = Column(UUID(as_uuid=True), primary_key=True)
     
     # Auto-generated applicant ID with format APP_001, APP_002, etc.
     applicant_id = Column(
         String, 
         unique=True, 
-        server_default=text("'APP_' || lpad(nextval('applicant_seq')::text, 3, '0')")
+        server_default=text("'APP_' || LPAD(nextval('applicant_seq')::text, 3, '0')")
     )
     
     # Email - required for registration
     email = Column(String, nullable=False, unique=True)
-    
-    # Profile completion status
-    profile_completed = Column(Boolean, default=False)
     
     # Personal Information - now nullable for initial registration
     family_name = Column(String, nullable=True, default="Not Set")
