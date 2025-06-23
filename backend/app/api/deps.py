@@ -90,20 +90,35 @@ def get_current_active_applicant(
     """Get current active applicant."""
     return current_applicant
 
-def get_admin_user(
-    current_applicant: Applicant = Depends(get_current_applicant)
-) -> Applicant:
-    """Dependency for admin-only endpoints."""
+async def get_admin_user(
+    db: Session = Depends(get_db),
+    user_data: dict = Depends(get_current_user_token)
+) -> dict:
+    """Dependency for admin-only endpoints - works without requiring applicant status."""
     # Check if user email matches admin email
     ADMIN_EMAIL = "madalto.official@gmail.com"
     
-    if current_applicant.email != ADMIN_EMAIL:
+    user_email = user_data.get("email")
+    user_uuid = user_data.get("id")
+    
+    if not user_email or not user_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user data",
+        )
+    
+    if user_email != ADMIN_EMAIL:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions. Admin access required."
         )
     
-    return current_applicant
+    # Return user data for admin - no need to be an applicant
+    return {
+        "email": user_email,
+        "uuid": user_uuid,
+        "user_data": user_data
+    }
 
 async def get_optional_current_applicant(
     db: Session = Depends(get_db),
@@ -221,10 +236,10 @@ def get_application_owner(
     
     return application
 
-def get_application_for_admin(
+async def get_application_for_admin(
     application_id: str,
     db: Session = Depends(get_db),
-    admin_user: Applicant = Depends(get_admin_user)
+    admin_user: dict = Depends(get_admin_user)
 ):
     """
     Get application for admin access (no ownership verification).
