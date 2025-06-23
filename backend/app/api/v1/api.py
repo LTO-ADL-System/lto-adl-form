@@ -5,7 +5,7 @@ from app.api.v1.endpoints import auth, auth_supabase, applicants, applications, 
 api_router = APIRouter()
 
 api_router.include_router(public.router, prefix="/public", tags=["public"])
-api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+# api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(auth_supabase.router, prefix="/auth-supabase", tags=["supabase-authentication"])
 api_router.include_router(applicants.router, prefix="/applicants", tags=["applicants"])
 api_router.include_router(applications.router, prefix="/applications", tags=["applications"])

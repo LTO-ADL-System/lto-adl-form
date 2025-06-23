@@ -1,3 +1,4 @@
+# app/schemas/auth.py
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 import re
@@ -273,3 +274,116 @@ class LoginWithOTP(BaseModel):
 class OTPResponse(BaseModel):
     message: str
     expires_in_minutes: int
+
+
+# Supabase-specific schemas for migration
+
+class SupabaseToken(BaseModel):
+    """Supabase authentication token response"""
+    access_token: str
+    refresh_token: str
+    expires_in: int
+    token_type: str = "bearer"
+    user: dict
+
+
+class SupabaseSignUpRequest(BaseModel):
+    """Supabase sign-up request"""
+    email: EmailStr
+    password: str
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one digit')
+        return v
+
+
+class SupabaseSignInRequest(BaseModel):
+    """Supabase sign-in request"""
+    email: EmailStr
+    password: str
+
+
+class OTPRequest(BaseModel):
+    """Request OTP for email verification"""
+    email: EmailStr
+
+
+class OTPVerification(BaseModel):
+    """Verify OTP code"""
+    email: EmailStr
+    otp_code: str
+    
+    @validator('otp_code')
+    def validate_otp_code(cls, v):
+        if not v.isdigit():
+            raise ValueError('OTP code must contain only digits')
+        if len(v) != 6:
+            raise ValueError('OTP code must be 6 digits')
+        return v
+
+
+class SupabaseRegisterWithOTP(BaseModel):
+    """Supabase registration with OTP verification"""
+    email: EmailStr
+    password: str
+    confirm_password: str
+    otp_code: str
+    first_name: str
+    family_name: str
+    contact_num: str
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one digit')
+        return v
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values, **kwargs):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
+    
+    @validator('contact_num')
+    def validate_phone(cls, v):
+        if not re.match(r'^\+63\d{10}', v):
+            raise ValueError('Phone number must be in format +63XXXXXXXXXX')
+        return v
+    
+    @validator('otp_code')
+    def validate_otp_code(cls, v):
+        if not v.isdigit():
+            raise ValueError('OTP code must contain only digits')
+        if len(v) != 6:
+            raise ValueError('OTP code must be 6 digits')
+        return v
+
+
+class SupabaseRefreshToken(BaseModel):
+    """Supabase refresh token request"""
+    refresh_token: str
+
+
+class SupabaseUserResponse(BaseModel):
+    """Supabase user response"""
+    id: str
+    email: str
+    email_confirmed_at: Optional[str] = None
+    created_at: str
+    updated_at: str
+    user_metadata: dict = {}
+    app_metadata: dict = {}

@@ -15,19 +15,18 @@ from .admin import (
     ApplicationRejection,
     DocumentVerification
 )
+
 from .auth import (
-    Token,
-    TokenData,
-    UserLogin,
-    UserRegister,
-    SimpleUserRegister,
-    RequestOTP,
-    VerifyOTP,
-    RegisterWithOTP,
-    SimpleRegisterWithOTP,
-    LoginWithOTP,
-    OTPResponse
+    SupabaseToken,
+    SupabaseSignUpRequest,
+    SupabaseSignInRequest,
+    OTPRequest,
+    OTPVerification,
+    SupabaseRegisterWithOTP,
+    SupabaseRefreshToken,
+    SupabaseUserResponse
 )
+
 from .application import (
     LicenseApplicationCreate,
     LicenseApplicationUpdate,
