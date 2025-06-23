@@ -9,7 +9,7 @@ from uuid import UUID
 
 from app.models.admin import Admin
 from app.models.applicant import Applicant
-from app.models.application import LicenseApplication, ApplicationStatusHistory
+from app.models.application import LicenseApplication, ApplicationStatusHistory, ApplicationType
 from app.models.document import SubmittedDocument
 from app.models.appointment import Appointment
 from app.schemas.admin import AdminCreate, AdminUpdate
@@ -106,16 +106,89 @@ class CRUDAdmin:
         
         return query.order_by(desc(LicenseApplication.submission_date)).offset(skip).limit(limit).all()
     
+    def get_filtered_applications(
+        self, 
+        db: Session, 
+        *, 
+        type_filter: Optional[str] = None,  # New, Renewal, Duplicate
+        status_filter: Optional[str] = None,  # Verifying, Resubmission, Rejected, Approved
+        sort_by: str = "date_desc",  # date_asc, date_desc
+        search_query: Optional[str] = None,
+        skip: int = 0, 
+        limit: int = 100
+    ) -> Dict[str, Any]:
+        """Get applications with advanced filtering and sorting options"""
+        
+        # Status mapping from friendly names to database IDs
+        status_mapping = {
+            "verifying": ["ASID_PEN", "ASID_SFA"],  # Pending and Subject for Approval
+            "resubmission": "ASID_RSB",  # For Resubmission
+            "rejected": "ASID_REJ",  # Rejected
+            "approved": "ASID_APR",  # Approved
+        }
+        
+        query = db.query(LicenseApplication).options(
+            joinedload(LicenseApplication.applicant),
+            joinedload(LicenseApplication.application_type),
+            joinedload(LicenseApplication.status)
+        )
+        
+        # Apply type filter (filter by application type category)
+        if type_filter and type_filter.lower() in ["new", "renewal", "duplicate"]:
+            query = query.join(LicenseApplication.application_type).filter(
+                ApplicationType.type_category == type_filter.title()
+            )
+        
+        # Apply status filter
+        if status_filter and status_filter.lower() in status_mapping:
+            status_ids = status_mapping[status_filter.lower()]
+            if isinstance(status_ids, list):
+                query = query.filter(LicenseApplication.application_status_id.in_(status_ids))
+            else:
+                query = query.filter(LicenseApplication.application_status_id == status_ids)
+        
+        # Apply search filter
+        if search_query:
+            search_filter = or_(
+                LicenseApplication.application_id.ilike(f"%{search_query}%"),
+                LicenseApplication.applicant.has(
+                    or_(
+                        Applicant.first_name.ilike(f"%{search_query}%"),
+                        Applicant.family_name.ilike(f"%{search_query}%"),
+                        Applicant.contact_num.ilike(f"%{search_query}%")
+                    )
+                )
+            )
+            query = query.filter(search_filter)
+        
+        # Apply sorting
+        if sort_by == "date_asc":
+            query = query.order_by(LicenseApplication.submission_date.asc())
+        else:  # Default to date_desc
+            query = query.order_by(LicenseApplication.submission_date.desc())
+        
+        # Get total count for pagination (before applying skip/limit)
+        total_count = query.count()
+        
+        # Apply pagination
+        applications = query.offset(skip).limit(limit).all()
+        
+        return {
+            "applications": applications,
+            "total": total_count,
+            "page": skip // limit + 1 if limit > 0 else 1,
+            "size": limit,
+            "pages": (total_count + limit - 1) // limit if limit > 0 else 1
+        }
+    
     def approve_application(
         self, 
         db: Session, 
         *, 
         application_id: str, 
-        license_number: str,
-        approved_by: str,
-        approval_notes: Optional[str] = None
+        approved_by: str
     ) -> Optional[LicenseApplication]:
-        """Approve an application and assign license number"""
+        """Approve an application following the SQL operations specified"""
         
         application = db.query(LicenseApplication).filter(
             LicenseApplication.application_id == application_id
@@ -124,28 +197,116 @@ class CRUDAdmin:
         if not application:
             return None
         
-        # Update application status
-        application.application_status_id = "ASID_APP"
+        try:
+            # 1. Insert into ApplicationStatusHistory
+            history = ApplicationStatusHistory(
+                application_id=application_id,
+                application_status_id="ASID_APR",  # Using ASID_APR as shown in SQL
+                changed_by=approved_by
+            )
+            db.add(history)
+            
+            # 2. Update licenseapplication status
+            application.application_status_id = "ASID_APR"
+            application.last_updated_date = func.now()
+            
+            # 3. Update submitteddocuments for this application
+            db.query(SubmittedDocument).filter(
+                SubmittedDocument.application_id == application_id
+            ).update({
+                'is_verified': True,
+                'verified_by': approved_by
+            })
+            
+            db.commit()
+            db.refresh(application)
+            return application
+            
+        except Exception as e:
+            db.rollback()
+            raise e
+    
+    def bulk_approve_applications(
+        self, 
+        db: Session, 
+        *, 
+        application_ids: List[str], 
+        approved_by: str
+    ) -> Dict[str, Any]:
+        """Bulk approve multiple applications"""
         
-        # Update applicant with license number
-        applicant = db.query(Applicant).filter(
-            Applicant.applicant_id == application.applicant_id
-        ).first()
+        successful_approvals = []
+        failed_approvals = []
         
-        if applicant:
-            applicant.license_number = license_number
+        for application_id in application_ids:
+            try:
+                result = self.approve_application(
+                    db, 
+                    application_id=application_id, 
+                    approved_by=approved_by
+                )
+                if result:
+                    successful_approvals.append(application_id)
+                else:
+                    failed_approvals.append({
+                        "application_id": application_id,
+                        "error": "Application not found"
+                    })
+            except Exception as e:
+                failed_approvals.append({
+                    "application_id": application_id,
+                    "error": str(e)
+                })
         
-        # Create status history
-        history = ApplicationStatusHistory(
-            application_id=application_id,
-            application_status_id="ASID_APP",
-            changed_by=approved_by
-        )
-        db.add(history)
+        return {
+            "successful_count": len(successful_approvals),
+            "failed_count": len(failed_approvals),
+            "successful_applications": successful_approvals,
+            "failed_applications": failed_approvals
+        }
+    
+    def bulk_reject_applications(
+        self, 
+        db: Session, 
+        *, 
+        application_ids: List[str], 
+        rejection_reason: str,
+        rejected_by: str,
+        additional_requirements: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Bulk reject multiple applications"""
         
-        db.commit()
-        db.refresh(application)
-        return application
+        successful_rejections = []
+        failed_rejections = []
+        
+        for application_id in application_ids:
+            try:
+                result = self.reject_application(
+                    db, 
+                    application_id=application_id, 
+                    rejection_reason=rejection_reason,
+                    rejected_by=rejected_by,
+                    additional_requirements=additional_requirements
+                )
+                if result:
+                    successful_rejections.append(application_id)
+                else:
+                    failed_rejections.append({
+                        "application_id": application_id,
+                        "error": "Application not found"
+                    })
+            except Exception as e:
+                failed_rejections.append({
+                    "application_id": application_id,
+                    "error": str(e)
+                })
+        
+        return {
+            "successful_count": len(successful_rejections),
+            "failed_count": len(failed_rejections),
+            "successful_applications": successful_rejections,
+            "failed_applications": failed_rejections
+        }
     
     def reject_application(
         self, 
