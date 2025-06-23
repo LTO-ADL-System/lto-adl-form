@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from app.crud.base import CRUDBase
 from app.models.document import SubmittedDocument
-from app.schemas.document import DocumentUpload
+from app.schemas.document import DocumentUpload, DocumentCreate
 
-class CRUDDocument(CRUDBase[SubmittedDocument, DocumentUpload, None]):
+class CRUDDocument(CRUDBase[SubmittedDocument, DocumentCreate, None]):
     def get_by_id(self, db: Session, *, document_id: str) -> Optional[SubmittedDocument]:
         return db.query(SubmittedDocument).options(
             joinedload(SubmittedDocument.application)

@@ -24,6 +24,14 @@ class DocumentUpload(BaseModel):
             raise ValueError(f'Document type must be one of: {", ".join(allowed_types)}')
         return v
 
+class DocumentCreate(BaseModel):
+    """Schema for creating document records"""
+    application_id: str
+    document_type: str
+    file_url: str = "pending_upload"  # Default until file is uploaded
+    is_verified: bool = False
+    verified_by: Optional[str] = None
+
 class DocumentResponse(BaseSchema):
     document_id: str
     application_id: str
