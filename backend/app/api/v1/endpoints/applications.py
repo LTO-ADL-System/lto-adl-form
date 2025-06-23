@@ -8,7 +8,7 @@ from app.api.deps import (
     get_current_applicant, 
     get_application_owner,
     validate_pagination,
-    validate_date_range
+
 )
 from app.crud import crud_application, crud_vehicle_category
 from app.models.applicant import Applicant

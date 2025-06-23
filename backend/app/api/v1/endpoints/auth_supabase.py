@@ -7,12 +7,10 @@ from uuid import UUID
 
 from app.api.deps import get_db
 from app.core.config import settings
-from app.crud import crud_applicant, crud_admin
+from app.crud import crud_applicant
 from app.models.applicant import Applicant
-from app.models.admin import Admin
 from app.schemas.auth import RequestOTP, OTPResponse, SimpleRegisterWithOTP
 from app.schemas.applicant import ApplicantCreate, ApplicantResponse, MinimalApplicantCreate
-from app.schemas.admin import AdminCreate, AdminResponse
 from app.schemas.response import ResponseModel
 from app.utils.supabase_auth import supabase_auth
 
@@ -28,48 +26,27 @@ async def sign_up_request(
     db: Session = Depends(get_db)
 ):
     """
-    Step 1 of registration: Register via Email and Password
-    Creates Supabase user and sends OTP for email confirmation
+    Step 1 of registration: Store credentials and send OTP
+    Does NOT create Supabase user yet - only sends OTP for verification
     """
     
     try:
+        # Check if user already exists in Supabase by trying to sign in
+        existing_check = await supabase_auth.sign_in_user(email=email, password="dummy")
+        if "access_token" in existing_check or ("error" in existing_check and "invalid" not in existing_check["error"]["message"].lower()):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists"
+            )
+        
         # Determine user type based on email
         user_type = "admin" if email == ADMIN_EMAIL else "applicant"
         
-        # Create user account with Supabase Auth first
-        signup_result = await supabase_auth.sign_up_user(
-            email=email,
-            password=password,
-            user_metadata={"user_type": user_type}
-        )
-        
-        print(f"DEBUG - Signup result: {signup_result}")
-        
-        if "error" in signup_result:
-            error_msg = signup_result["error"]["message"]
-            if "already been registered" in error_msg.lower() or "user already registered" in error_msg.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="User with this email already exists"
-                )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_msg
-            )
-        
-        # Extract user ID correctly - it's directly in the response
-        user_uuid = signup_result.get("id")
-        if not user_uuid:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create user account"
-            )
-        
-        # Generate custom OTP code for email confirmation
+        # Generate OTP code
         otp_code = supabase_auth.generate_otp_code()
         
-        # Store OTP with user info for later verification
-        await supabase_auth.store_otp_with_user_info(email, otp_code, "signup", user_uuid, user_type)
+        # Store user credentials temporarily until OTP verification
+        await supabase_auth.store_pending_user(email, password, user_type, otp_code)
         
         # Send OTP email using our custom email system
         email_sent = await supabase_auth.send_custom_otp_email(email, otp_code, "signup")
@@ -82,7 +59,7 @@ async def sign_up_request(
         
         return ResponseModel(
             success=True,
-            message="Account created! Verification code sent to your email. Please verify to complete registration.",
+            message="Verification code sent to your email. Please verify to complete registration.",
             data=OTPResponse(
                 message="Please enter the 6-digit code sent to your email to complete registration",
                 expires_in_minutes=5
@@ -94,7 +71,7 @@ async def sign_up_request(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create account: {str(e)}"
+            detail=f"Failed to send verification code: {str(e)}"
         )
 
 @router.post("/login-request", response_model=ResponseModel[OTPResponse])
@@ -104,25 +81,34 @@ async def login_request(
     db: Session = Depends(get_db)
 ):
     """
-    Step 1 of login: Request login with email and password
-    Validates credentials and sends OTP for additional security
+    Step 1 of login: Verify credentials and send OTP
+    Validates credentials with Supabase and sends OTP for additional security
     """
     
     try:
         # Verify credentials with Supabase first
         signin_result = await supabase_auth.sign_in_user(email=email, password=password)
         
-        if "error" in signin_result:
-            error_msg = signin_result["error"]["message"]
-            if "invalid" in error_msg.lower() or "credentials" in error_msg.lower():
+        if "error" in signin_result or "error_code" in signin_result:
+            error_msg = signin_result.get("msg") or signin_result.get("error", {}).get("message", "Unknown error")
+            error_code = signin_result.get("error_code")
+            
+            # Handle specific error cases
+            if error_code == "email_provider_disabled":
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Email authentication is currently disabled. Please enable email provider in Supabase settings."
+                )
+            elif "invalid" in error_msg.lower() or "credentials" in error_msg.lower():
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid email or password"
                 )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_msg
-            )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Authentication failed: {error_msg}"
+                )
         
         # Generate and send OTP for additional security
         otp_code = supabase_auth.generate_otp_code()
@@ -157,15 +143,15 @@ async def login_request(
 @router.post("/verify-otp", response_model=ResponseModel[dict])
 async def verify_otp(
     email: str,
-    password: str,
     otp_code: str,
     action: str,  # "signup" or "login"
+    password: str = None,  # Only needed for login
     db: Session = Depends(get_db)
 ):
     """
     Step 2: Verify OTP for both signup and login
-    Only handles authentication - no profile creation
-    Applicant profiles are created only during application form submission
+    For signup: Creates Supabase user AFTER OTP verification
+    For login: Authenticates existing user AFTER OTP verification
     """
     
     try:
@@ -176,8 +162,13 @@ async def verify_otp(
             )
         
         if action == "signup":
-            return await handle_signup_verification(email, password, otp_code, db)
+            return await handle_signup_verification(email, otp_code, db)
         else:  # login
+            if not password:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Password is required for login verification"
+                )
             return await handle_login_verification(email, password, otp_code, db)
         
     except HTTPException:
@@ -188,71 +179,66 @@ async def verify_otp(
             detail=f"Verification failed: {str(e)}"
         )
 
-async def handle_signup_verification(email: str, password: str, otp_code: str, db: Session):
-    """Handle signup verification - only confirms email, no profile creation"""
+async def handle_signup_verification(email: str, otp_code: str, db: Session):
+    """Handle signup verification - creates Supabase user AFTER OTP verification"""
     
     try:
-        # Verify OTP and get stored user info
-        user_info = await supabase_auth.verify_stored_otp_with_info(email, otp_code, "signup")
+        # Verify OTP and get pending user data
+        pending_user = await supabase_auth.verify_otp_and_get_pending_user(email, otp_code)
         
-        if not user_info:
+        if not pending_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired verification code"
             )
         
-        user_uuid = user_info['user_uuid']
-        user_type = user_info['user_type']
+        user_type = pending_user['user_type']
+        password = pending_user['password']
         
-        print(f"DEBUG - Confirming email verification for user {user_uuid}")
+        print(f"DEBUG - Creating confirmed user for {email}")
         
-        # Confirm email verification with Supabase (this is crucial!)
-        confirm_result = await supabase_auth.confirm_email_verification(email, user_uuid)
+        # NOW create the Supabase user with email already confirmed
+        signup_result = await supabase_auth.create_confirmed_user(
+            email=email,
+            password=password,
+            user_metadata={"user_type": user_type}
+        )
         
-        if "error" in confirm_result:
-            print(f"DEBUG - Email confirmation failed: {confirm_result}")
-            # Continue anyway, as the user might already be confirmed
-        
-        # Check user status after confirmation
-        user_status = await supabase_auth.get_user_by_id(user_uuid)
-        print(f"DEBUG - User status after confirmation: {user_status}")
-        
-        # Generate tokens directly instead of signing in (which might fail for unconfirmed users)
-        token_result = await supabase_auth.generate_tokens_for_user(user_uuid)
-        
-        if "error" in token_result:
-            print(f"DEBUG - Token generation failed, trying regular sign-in: {token_result}")
-            # Fallback to regular sign-in
-            signin_result = await supabase_auth.sign_in_user(email=email, password=password)
-            
-            if "error" in signin_result:
-                print(f"DEBUG - Sign in failed after email confirmation: {signin_result}")
+        if "error" in signup_result:
+            error_msg = signup_result["error"]["message"]
+            if "already been registered" in error_msg.lower():
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Failed to authenticate user after email confirmation"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User with this email already exists"
                 )
-        else:
-            # Use the generated tokens
-            signin_result = token_result
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
+            )
         
-        # Manually update last sign-in timestamp to ensure it's recorded
-        print(f"DEBUG - Updating last sign-in timestamp for user {user_uuid}")
-        await supabase_auth.update_user_last_sign_in(user_uuid)
+        # Extract user ID from the result
+        user_uuid = signup_result.get("id")
+        if not user_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user account"
+            )
         
-        # For admin users, create admin profile in database
-        if user_type == "admin":
-            # Check if admin profile already exists
-            admin = crud_admin.get_admin_by_uuid(db, uuid=UUID(user_uuid))
-            if not admin:
-                # Auto-create admin profile for the special admin email
-                admin_data = AdminCreate(
-                    email=ADMIN_EMAIL,
-                    full_name="MadaLTO System Administrator",
-                    role="super_admin",
-                    can_manage_users=True
-                )
-                admin = crud_admin.create_admin(db, obj_in=admin_data, uuid=UUID(user_uuid))
-            
+        print(f"DEBUG - User created successfully: {user_uuid}")
+        
+        # Now sign in the user to get tokens
+        signin_result = await supabase_auth.sign_in_user(email=email, password=password)
+        
+        if "error" in signin_result:
+            print(f"DEBUG - Sign-in failed after user creation: {signin_result}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User created but failed to sign in. Please try logging in."
+            )
+        
+        # Simple email-based admin check (no database dependency)
+        if email == ADMIN_EMAIL:
+            # Admin user
             return ResponseModel(
                 success=True,
                 message="Admin registration completed! Welcome to MadaLTO Admin Portal.",
@@ -263,12 +249,17 @@ async def handle_signup_verification(email: str, password: str, otp_code: str, d
                     "access_token": signin_result.get("access_token"),
                     "refresh_token": signin_result.get("refresh_token"),
                     "expires_in": signin_result.get("expires_in", 3600),
-                    "has_admin_profile": True,
-                    "admin_profile": admin
+                    "is_admin": True,
+                    "admin_permissions": {
+                        "can_approve_applications": True,
+                        "can_manage_users": True,
+                        "can_view_analytics": True,
+                        "can_manage_appointments": True
+                    }
                 }
             )
         else:
-            # For regular users, just return auth info - no applicant profile creation
+            # Regular applicant user
             return ResponseModel(
                 success=True,
                 message="Registration completed! You can now access the system. Complete your application when ready.",
@@ -279,6 +270,7 @@ async def handle_signup_verification(email: str, password: str, otp_code: str, d
                     "access_token": signin_result.get("access_token"),
                     "refresh_token": signin_result.get("refresh_token"),
                     "expires_in": signin_result.get("expires_in", 3600),
+                    "is_admin": False,
                     "has_applicant_profile": False,
                     "message": "Profile will be created when you submit your first application"
                 }
@@ -294,7 +286,7 @@ async def handle_signup_verification(email: str, password: str, otp_code: str, d
         )
 
 async def handle_login_verification(email: str, password: str, otp_code: str, db: Session):
-    """Handle login verification - returns authentication tokens and checks for existing profiles"""
+    """Handle login verification - authenticates user AFTER OTP verification"""
     
     try:
         # Verify OTP
@@ -311,43 +303,49 @@ async def handle_login_verification(email: str, password: str, otp_code: str, db
         # Sign in with Supabase to get fresh tokens
         signin_result = await supabase_auth.sign_in_user(email=email, password=password)
         
-        if "error" in signin_result:
+        if "error" in signin_result or "error_code" in signin_result:
+            error_msg = signin_result.get("msg") or signin_result.get("error", {}).get("message", "Unknown error")
+            error_code = signin_result.get("error_code")
+            
             print(f"DEBUG - Login sign-in failed: {signin_result}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
-            )
+            
+            # Handle specific error cases
+            if error_code == "email_provider_disabled":
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Email authentication is currently disabled. Please contact support or enable email provider in Supabase settings."
+                )
+            elif "invalid" in error_msg.lower() or "credentials" in error_msg.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Authentication failed: {error_msg}"
+                )
         
         print(f"DEBUG - Login sign-in successful for {email}")
         
-        # Extract user ID correctly from signin response
+        # Extract user ID from signin response
         user_uuid = signin_result.get("user", {}).get("id") or signin_result.get("id")
         
-        # Manually update last sign-in timestamp to ensure it's recorded
-        print(f"DEBUG - Updating last sign-in timestamp for user {user_uuid}")
+        if not user_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to get user information"
+            )
+        
+        # Update last sign-in timestamp
         await supabase_auth.update_user_last_sign_in(user_uuid)
         
-        # Check user type from Supabase metadata
-        user_metadata = signin_result.get("user", {}).get("user_metadata", {})
-        user_type = user_metadata.get("user_type", "applicant")
-        
-        # Special handling for admin email
-        if email == ADMIN_EMAIL or user_type == "admin":
-            # Check if admin profile exists
-            admin = crud_admin.get_admin_by_uuid(db, uuid=UUID(user_uuid))
-            if not admin:
-                # Auto-create admin profile if it doesn't exist
-                admin_data = AdminCreate(
-                    email=ADMIN_EMAIL,
-                    full_name="MadaLTO System Administrator",
-                    role="super_admin",
-                    can_manage_users=True
-                )
-                admin = crud_admin.create_admin(db, obj_in=admin_data, uuid=UUID(user_uuid))
-            
+        # Simple email-based admin check (no database dependency)
+        if email == ADMIN_EMAIL:
+            # Admin user
             return ResponseModel(
                 success=True,
-                message="Admin login successful! Welcome back.",
+                message="Admin login successful! Welcome back to MadaLTO Admin Portal.",
                 data={
                     "user_id": user_uuid,
                     "user_type": "admin",
@@ -355,17 +353,29 @@ async def handle_login_verification(email: str, password: str, otp_code: str, db
                     "access_token": signin_result.get("access_token"),
                     "refresh_token": signin_result.get("refresh_token"),
                     "expires_in": signin_result.get("expires_in", 3600),
-                    "has_admin_profile": True,
-                    "admin_profile": admin
+                    "is_admin": True,
+                    "admin_permissions": {
+                        "can_approve_applications": True,
+                        "can_manage_users": True,
+                        "can_view_analytics": True,
+                        "can_manage_appointments": True
+                    }
                 }
             )
         else:
-            # For regular users, check if they have an applicant profile
-            applicant = crud_applicant.get_by_email(db, email=email)
+            # Regular applicant user
+            # Check if applicant profile exists (optional)
+            try:
+                applicant = crud_applicant.get_applicant_by_uuid(db, uuid=UUID(user_uuid))
+                has_applicant_profile = applicant is not None
+            except Exception as e:
+                print(f"DEBUG - Could not check applicant profile: {e}")
+                applicant = None
+                has_applicant_profile = False
             
             return ResponseModel(
                 success=True,
-                message="Login successful! Welcome back.",
+                message="Login successful! Welcome back to MadaLTO.",
                 data={
                     "user_id": user_uuid,
                     "user_type": "applicant",
@@ -373,9 +383,9 @@ async def handle_login_verification(email: str, password: str, otp_code: str, db
                     "access_token": signin_result.get("access_token"),
                     "refresh_token": signin_result.get("refresh_token"),
                     "expires_in": signin_result.get("expires_in", 3600),
-                    "has_applicant_profile": applicant is not None,
-                    "applicant_profile": applicant if applicant else None,
-                    "message": "Complete your application to create your profile" if not applicant else "Profile found"
+                    "is_admin": False,
+                    "has_applicant_profile": has_applicant_profile,
+                    "applicant_profile": applicant if has_applicant_profile else None
                 }
             )
     
@@ -429,40 +439,95 @@ async def get_user_profile(
     """Get user profile information - checks both auth and applicant data"""
     
     try:
-        # Check if user has an applicant profile
-        applicant = crud_applicant.get_by_email(db, email=email)
-        
-        # Check if user is admin
+        # Simple email-based admin check
         if email == ADMIN_EMAIL:
-            # Get admin profile by email (you might need to add this method)
-            admin = db.query(Admin).filter(Admin.email == email).first()
-            
             return ResponseModel(
                 success=True,
-                message="User profile retrieved",
+                message="Admin profile retrieved successfully",
                 data={
                     "user_type": "admin",
                     "email": email,
-                    "has_admin_profile": admin is not None,
-                    "has_applicant_profile": False,
-                    "admin_profile": admin
+                    "is_admin": True,
+                    "admin_permissions": {
+                        "can_approve_applications": True,
+                        "can_manage_users": True,
+                        "can_view_analytics": True,
+                        "can_manage_appointments": True
+                    }
                 }
             )
         else:
+            # Check if user has an applicant profile
+            try:
+                applicant = crud_applicant.get_by_email(db, email=email)
+                has_applicant_profile = applicant is not None
+            except Exception as e:
+                print(f"DEBUG - Could not check applicant profile: {e}")
+                applicant = None
+                has_applicant_profile = False
+            
             return ResponseModel(
                 success=True,
-                message="User profile retrieved",
+                message="User profile retrieved successfully",
                 data={
                     "user_type": "applicant",
                     "email": email,
-                    "has_admin_profile": False,
-                    "has_applicant_profile": applicant is not None,
-                    "applicant_profile": applicant
+                    "is_admin": False,
+                    "has_applicant_profile": has_applicant_profile,
+                    "applicant_profile": applicant if has_applicant_profile else None
                 }
             )
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user profile: {str(e)}"
-        ) 
+        )
+
+@router.get("/verify-token", response_model=ResponseModel[dict])
+async def verify_access_token(
+    token: str
+):
+    """Verify if access token is valid and return user info"""
+    
+    try:
+        user_info = await supabase_auth.verify_token(token)
+        
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token"
+            )
+        
+        email = user_info.get("email")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token data"
+            )
+        
+        # Simple email-based admin check
+        is_admin = email == ADMIN_EMAIL
+        user_type = "admin" if is_admin else "applicant"
+        
+        return ResponseModel(
+            success=True,
+            message="Token is valid",
+            data={
+                "user_id": user_info.get("id"),
+                "email": email,
+                "user_type": user_type,
+                "is_admin": is_admin,
+                "token_valid": True
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token verification failed: {str(e)}"
+        )
