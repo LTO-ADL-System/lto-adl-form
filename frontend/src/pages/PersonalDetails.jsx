@@ -1,5 +1,10 @@
+// frontend/src/pages/PersonalDetails.jsx
+
 import React, { useState, useEffect } from "react";
-import person from "../assets/person.png";
+import person from "../assets/person.svg";
+import license from "../assets/license-details.svg";
+import document from "../assets/documents.svg";
+import finalize from "../assets/finalize.svg";
 import personalDetailsConfig from "../config/personal_details.json";
 
 const PersonalDetails = () => {
@@ -11,18 +16,9 @@ const PersonalDetails = () => {
 
     const steps = [
         { name: "Personal", icon: person },
-        {
-            name: "License Details",
-            icon: "https://placehold.co/40x40/CCCCCC/FFFFFF?text=L",
-        },
-        {
-            name: "Documents",
-            icon: "https://placehold.co/40x40/CCCCCC/FFFFFF?text=D",
-        },
-        {
-            name: "Finalize",
-            icon: "https://placehold.co/40x40/CCCCCC/FFFFFF?text=F",
-        },
+        { name: "License Details", icon: license },
+        { name: "Documents", icon: document },
+        { name: "Finalize", icon: finalize },
     ];
 
     // get the regionProvinceMapping from the config
@@ -145,9 +141,7 @@ const PersonalDetails = () => {
         const { name, label, type, placeholder, required, conditionalField, step, rows } = field;
 
         // handle conditional fields (like emergency contact address fields)
-        if (conditionalField && formData[conditionalField]) {
-            return null; // Hide field if checkbox is checked
-        }
+        const isConditionallyDisabled = conditionalField && formData[conditionalField];
 
         const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500";
 
@@ -169,10 +163,11 @@ const PersonalDetails = () => {
                             type={type}
                             name={name}
                             placeholder={placeholder}
-                            className={`${baseClasses} text-gray-500`}
+                            className={`${baseClasses} text-gray-500 ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, e.target.value)}
                             required={required}
+                            disabled={isConditionallyDisabled}
                         />
                     </div>
                 );
@@ -185,11 +180,12 @@ const PersonalDetails = () => {
                             type="number"
                             name={name}
                             placeholder={placeholder}
-                            className={baseClasses}
+                            className={`${baseClasses} ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, parseFloat(e.target.value) || '')}
                             required={required}
                             step={step || "1"}
+                            disabled={isConditionallyDisabled}
                         />
                     </div>
                 );
@@ -201,18 +197,19 @@ const PersonalDetails = () => {
                         <textarea
                             name={name}
                             placeholder={placeholder}
-                            className={baseClasses}
+                            className={`${baseClasses} ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, e.target.value)}
                             required={required}
                             rows={rows || 3}
+                            disabled={isConditionallyDisabled}
                         />
                     </div>
                 );
 
             case 'select':
                 const options = getFieldOptions(field);
-                const isDisabled = field.dependsOn && !formData[field.dependsOn];
+                const isDisabled = (field.dependsOn && !formData[field.dependsOn]) || isConditionallyDisabled;
 
                 return (
                     <div key={name}>
@@ -226,7 +223,8 @@ const PersonalDetails = () => {
                             disabled={isDisabled}
                         >
                             <option value="" disabled>
-                                {isDisabled ? `Select ${field.dependsOn} first` : placeholder}
+                                {isDisabled && isConditionallyDisabled ? `Same as applicant address` :
+                                    isDisabled ? `Select ${field.dependsOn} first` : placeholder}
                             </option>
                             {options?.map((option) => (
                                 <option key={option.value} value={option.value}>
