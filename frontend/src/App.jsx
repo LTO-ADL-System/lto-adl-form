@@ -206,14 +206,16 @@ function App() {
                 <Route
                     path="/"
                     element={
-                        isAuthenticated ? <Navigate to="/home" replace /> : <LandingPage />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
+                        ) : <LandingPage />
                     }
                 />
                 <Route
                     path="/register"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
                             <Register onRegister={handleRegister} />
                         )
@@ -223,7 +225,7 @@ function App() {
                     path="/signin"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
                             <SignIn onLogin={handleLogin} />
                         )
@@ -233,7 +235,7 @@ function App() {
                     path="/confirmation"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
                             <Confirmation
                                 onConfirmation={handleConfirmation}
@@ -268,7 +270,9 @@ function App() {
                 <Route
                     path="/dashboard"
                     element={
-                        isAuthenticated ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/home" replace />
+                        ) : <Navigate to="/signin" replace />
                     }
                 />
 
@@ -276,7 +280,9 @@ function App() {
                 <Route
                     path="/applicants"
                     element={
-                        isAuthenticated ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/home" replace />
+                        ) : <Navigate to="/signin" replace />
                     }
                 />
             </Routes>

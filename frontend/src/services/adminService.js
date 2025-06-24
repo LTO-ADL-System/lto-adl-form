@@ -17,6 +17,12 @@ class AdminService {
     return response;
   }
 
+  // Get individual application details for admin
+  async getApplicationDetails(applicationId) {
+    const response = await apiService.get(`/admin/applications/${applicationId}`);
+    return response;
+  }
+
   // Get applications with advanced filtering
   async getFilteredApplications(filters = {}) {
     const params = new URLSearchParams();
@@ -57,20 +63,23 @@ class AdminService {
 
   // Bulk approve applications
   async bulkApproveApplications(applicationIds) {
-    const response = await apiService.post('/admin/applications/bulk-approve', {
-      application_ids: applicationIds
-    });
+    // Send application_ids as query parameters since FastAPI expects List[str] as a direct parameter
+    const params = new URLSearchParams();
+    applicationIds.forEach(id => params.append('application_ids', id));
+    
+    const response = await apiService.post(`/admin/applications/bulk-approve?${params.toString()}`, {});
     return response;
   }
 
-  // Bulk reject applications
+  // Bulk reject applications  
   async bulkRejectApplications(applicationIds, rejectionReason, additionalNotes = '') {
-    // Use the bulk-actions endpoint instead as it has a cleaner API design
-    const response = await apiService.post('/admin/applications/bulk-actions', {
-      action: 'reject',
-      application_ids: applicationIds,
+    // Send application_ids as query parameters and rejection data as JSON body
+    const params = new URLSearchParams();
+    applicationIds.forEach(id => params.append('application_ids', id));
+    
+    const response = await apiService.post(`/admin/applications/bulk-reject?${params.toString()}`, {
       rejection_reason: rejectionReason,
-      additional_requirements: additionalNotes
+      additional_requirements: additionalNotes || null
     });
     return response;
   }

@@ -15,14 +15,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/*a {*/
+/* a {*/
 /*  font-weight: 500;*/
 /*  !*color: white;*!*/
 /*  !*text-decoration: none;*!*/
 /*}*/
 /*a:hover {*/
 /*  color: #03267F;*/
-/*}*/
+/*} */
 
 body {
   margin: 0;
@@ -139,7 +139,7 @@ button:focus-visible {
 
 
 
-@media (prefers-color-scheme: light) {
+/* @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
@@ -150,4 +150,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */

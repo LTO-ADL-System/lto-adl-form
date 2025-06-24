@@ -10,7 +10,7 @@ export default function AdminApplicantPreviewHeader({ allSelected, onSelectAll }
                 padding: "4px 12px",
                 rowGap: "72px",
                 gridTemplateRows: "repeat(1, minmax(0, 1fr))",
-                gridTemplateColumns: "auto 1fr 1fr auto auto auto",
+                gridTemplateColumns: "auto 1fr 1fr auto auto",
                 alignItems: "center",
                 borderTop: "2px solid #BDBDBF",
                 borderBottom: "2px solid #BDBDBF",
@@ -107,7 +107,7 @@ export default function AdminApplicantPreviewHeader({ allSelected, onSelectAll }
             >
                 Date Submitted
             </div>
-            {/* View */}
+            {/* Actions */}
             <div
                 className="flex items-center justify-center"
                 style={{
@@ -118,7 +118,7 @@ export default function AdminApplicantPreviewHeader({ allSelected, onSelectAll }
                     letterSpacing: "0.32px",
                 }}
             >
-                View
+                Actions
             </div>
         </div>
     );

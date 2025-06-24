@@ -1,18 +1,364 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AdminNavBar from "./AdminNavBar";
 import AdminApplicantPreviewHeader from "./AdminApplicantPreviewHeader";
 import AdminApplicantPreview from "./AdminApplicantPreview";
+import ApplicationViewModal from "./ApplicationViewModal";
+import adminService from "../services/adminService";
+
+// Custom hook for debouncing
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+};
 
 export default function AdminApplicants() {
-    // Example data
-    const [applicants] = useState([
-        { id: 1, type: "New", name: "Juan Dela Cruz", status: "Verifying", date: "2024-06-24" },
-        { id: 2, type: "Renewal", name: "Maria Santos", status: "Approval", date: "2024-06-23" },
-        { id: 3, type: "Duplicate", name: "Pedro Reyes", status: "Rejected", date: "2024-06-22" },
-    ]);
-    const [allSelected, setAllSelected] = useState(false);
+    const [applicants, setApplicants] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [search, setSearch] = useState("");
     const [globalActionsOpen, setGlobalActionsOpen] = useState(false);
+    const [filterByOpen, setFilterByOpen] = useState(false);
+    const [sortByOpen, setSortByOpen] = useState(false);
+    const [selectedFilters, setSelectedFilters] = useState({
+        type: '',
+        status: ''
+    });
+    const [selectedSort, setSelectedSort] = useState('date_desc'); // Default to newest first
+    const [pagination, setPagination] = useState({
+        skip: 0,
+        limit: 20,
+        total: 0
+    });
+    const [selectedApplicant, setSelectedApplicant] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedApplications, setSelectedApplications] = useState(new Set());
+    const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+    // Refs for dropdown click outside detection
+    const filterDropdownRef = useRef(null);
+    const sortDropdownRef = useRef(null);
+    const globalActionsRef = useRef(null);
+
+    // Debounce search to reduce API calls
+    const debouncedSearch = useDebounce(search, 500); // 500ms delay
+
+    // Memoize status and type mapping functions
+    const getDisplayStatus = useMemo(() => (apiStatus) => {
+        const statusMap = {
+            'ASID_PEN': 'Unchecked',
+            'ASID_SFA': 'Verifying', 
+            'ASID_APR': 'Approval',
+            'ASID_REJ': 'Rejected',
+            'ASID_RSB': 'Resubmission'
+        };
+        return statusMap[apiStatus] || 'Unchecked';
+    }, []);
+
+    const getDisplayType = useMemo(() => (apiType) => {
+        const typeMap = {
+            'ATID_NEW': 'New',
+            'ATID_REN': 'Renewal',
+            'ATID_DUP': 'Duplicate'
+        };
+        return typeMap[apiType] || 'New';
+    }, []);
+
+    const fetchApplications = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Use filtered applications API if filters or sorting are applied
+            const hasFiltersOrSort = selectedFilters.type || selectedFilters.status || selectedSort !== 'date_desc' || debouncedSearch;
+            
+            let response;
+            if (hasFiltersOrSort) {
+                response = await adminService.getFilteredApplications({
+                    typeFilter: selectedFilters.type || undefined,
+                    statusFilter: selectedFilters.status || undefined,
+                    sortBy: selectedSort,
+                    searchQuery: debouncedSearch || undefined,
+                    skip: pagination.skip,
+                    limit: pagination.limit
+                });
+            } else {
+                response = await adminService.getAllApplications(
+                    pagination.skip, 
+                    pagination.limit, 
+                    debouncedSearch
+                );
+            }
+            
+            if (response.success && response.data) {
+                // Handle different possible response structures
+                let applicationsArray = [];
+                
+                if (Array.isArray(response.data.applications)) {
+                    applicationsArray = response.data.applications;
+                } else if (Array.isArray(response.data)) {
+                    applicationsArray = response.data;
+                } else {
+                    applicationsArray = [];
+                }
+                
+                // Transform API data to match component expectations
+                const transformedApplicants = applicationsArray.map(app => {
+                    // Try different ways to get the applicant name based on schema structure
+                    let applicantName = 'N/A';
+                    if (app.applicant) {
+                        // Based on ApplicantResponse schema: first_name, middle_name, family_name
+                        const firstName = app.applicant.first_name || '';
+                        const middleName = app.applicant.middle_name || '';
+                        const familyName = app.applicant.family_name || '';
+                        applicantName = `${firstName} ${middleName} ${familyName}`.trim().replace(/\s+/g, ' ') || 'N/A';
+                    }
+                    
+                    return {
+                        id: app.application_id || app.id,
+                        type: getDisplayType(app.application_type_id || app.application_type),
+                        name: applicantName,
+                        status: getDisplayStatus(app.application_status_id || app.status),
+                        date: app.submission_date ? new Date(app.submission_date).toLocaleDateString('en-CA') : 'N/A',
+                        originalData: app // Keep original data for actions
+                    };
+                });
+                
+                setApplicants(transformedApplicants);
+                setPagination(prev => ({
+                    ...prev,
+                    total: response.data.total || applicationsArray.length
+                }));
+
+                // If no real data, add minimal test data for debugging (only in development)
+                if (transformedApplicants.length === 0 && process.env.NODE_ENV === 'development') {
+                    const testApplicants = [
+                        {
+                            id: 'test-1',
+                            type: 'New',
+                            name: 'Test Applicant',
+                            status: 'Unchecked',
+                            date: new Date().toLocaleDateString('en-CA'),
+                            originalData: {
+                                application_id: 'test-1',
+                                application_type_id: 'ATID_NEW',
+                                applicant_name: 'Test Applicant',
+                                application_status_id: 'ASID_PEN',
+                                submission_date: new Date().toISOString(),
+                                applicant_email: 'test@example.com'
+                            }
+                        }
+                    ];
+                    setApplicants(testApplicants);
+                }
+            } else {
+                setApplicants([]);
+            }
+        } catch (err) {
+            console.error('Error fetching applications:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [pagination.skip, pagination.limit, debouncedSearch, selectedFilters.type, selectedFilters.status, selectedSort, getDisplayType, getDisplayStatus]);
+
+    // Optimized useEffect with debounced search
+    useEffect(() => {
+        fetchApplications();
+    }, [fetchApplications]);
+
+    // Clear selections when applicants change
+    useEffect(() => {
+        const currentIds = new Set(applicants.map(app => app.id));
+        setSelectedApplications(prev => {
+            const filtered = new Set([...prev].filter(id => currentIds.has(id)));
+            return filtered;
+        });
+    }, [applicants]);
+
+    // Click outside to close dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+                setFilterByOpen(false);
+            }
+            if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+                setSortByOpen(false);
+            }
+            if (globalActionsRef.current && !globalActionsRef.current.contains(event.target)) {
+                setGlobalActionsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    // Handle search input with immediate state update (debouncing happens automatically)
+    const handleSearchChange = useCallback((value) => {
+        setSearch(value);
+        // Reset pagination when searching
+        setPagination(prev => ({ ...prev, skip: 0 }));
+    }, []);
+
+    // Handle filter changes
+    const handleFilterChange = useCallback((filterType, value) => {
+        setSelectedFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
+        // Reset pagination when filtering
+        setPagination(prev => ({ ...prev, skip: 0 }));
+        // Close the dropdown
+        setFilterByOpen(false);
+    }, []);
+
+    // Handle sort change
+    const handleSortChange = useCallback((sortValue) => {
+        setSelectedSort(sortValue);
+        // Reset pagination when sorting
+        setPagination(prev => ({ ...prev, skip: 0 }));
+        // Close the dropdown
+        setSortByOpen(false);
+    }, []);
+
+    // Clear all filters
+    const handleClearFilters = useCallback(() => {
+        setSelectedFilters({ type: '', status: '' });
+        setSelectedSort('date_desc');
+        setPagination(prev => ({ ...prev, skip: 0 }));
+    }, []);
+
+    // Handle view application
+    const handleViewApplication = useCallback((applicant) => {
+        setSelectedApplicant(applicant);
+        setIsModalOpen(true);
+    }, []);
+
+    // Close modal
+    const handleCloseModal = useCallback(() => {
+        setIsModalOpen(false);
+        setSelectedApplicant(null);
+    }, []);
+
+    // Handle individual application selection
+    const handleApplicationSelect = useCallback((applicationId, isSelected) => {
+        setSelectedApplications(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) {
+                newSet.add(applicationId);
+            } else {
+                newSet.delete(applicationId);
+            }
+            return newSet;
+        });
+    }, []);
+
+    // Handle select all applications
+    const handleSelectAll = useCallback((isSelected) => {
+        if (isSelected) {
+            const allIds = new Set(applicants.map(app => app.id));
+            setSelectedApplications(allIds);
+        } else {
+            setSelectedApplications(new Set());
+        }
+    }, [applicants]);
+
+    // Check if all applications are selected
+    const allSelected = useMemo(() => {
+        return applicants.length > 0 && applicants.every(app => selectedApplications.has(app.id));
+    }, [applicants, selectedApplications]);
+
+    // Bulk action handlers
+    const handleBulkApprove = useCallback(async () => {
+        if (selectedApplications.size === 0) {
+            alert('Please select applications to approve');
+            return;
+        }
+
+        const count = selectedApplications.size;
+        const confirmed = window.confirm(
+            `Are you sure you want to approve ${count} application${count !== 1 ? 's' : ''}? This action cannot be undone.`
+        );
+        
+        if (!confirmed) return;
+
+        try {
+            setBulkActionLoading(true);
+            const applicationIds = Array.from(selectedApplications);
+            
+            // Fix: Use the correct endpoint format
+            const response = await adminService.bulkApproveApplications(applicationIds);
+            
+            if (response.success) {
+                alert(`✅ Successfully approved ${applicationIds.length} applications`);
+                setSelectedApplications(new Set());
+                setGlobalActionsOpen(false);
+                fetchApplications(); // Refresh the list
+            } else {
+                throw new Error(response.message || 'Bulk approve failed');
+            }
+        } catch (error) {
+            console.error('Bulk approve error:', error);
+            alert('❌ Error approving applications: ' + error.message);
+        } finally {
+            setBulkActionLoading(false);
+        }
+    }, [selectedApplications, fetchApplications]);
+
+    const handleBulkReject = useCallback(async () => {
+        if (selectedApplications.size === 0) {
+            alert('Please select applications to reject');
+            return;
+        }
+
+        const count = selectedApplications.size;
+        const reason = prompt(`Please enter rejection reason for ${count} application${count !== 1 ? 's' : ''}:`);
+        if (!reason || reason.trim() === '') {
+            alert('Rejection reason is required');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to reject ${count} application${count !== 1 ? 's' : ''} with reason: "${reason}"? This action cannot be undone.`
+        );
+        
+        if (!confirmed) return;
+
+        try {
+            setBulkActionLoading(true);
+            const applicationIds = Array.from(selectedApplications);
+            
+            // Fix: Use the correct endpoint format
+            const response = await adminService.bulkRejectApplications(applicationIds, reason.trim());
+            
+            if (response.success) {
+                alert(`✅ Successfully rejected ${applicationIds.length} applications`);
+                setSelectedApplications(new Set());
+                setGlobalActionsOpen(false);
+                fetchApplications(); // Refresh the list
+            } else {
+                throw new Error(response.message || 'Bulk reject failed');
+            }
+        } catch (error) {
+            console.error('Bulk reject error:', error);
+            alert('❌ Error rejecting applications: ' + error.message);
+        } finally {
+            setBulkActionLoading(false);
+        }
+    }, [selectedApplications, fetchApplications]);
 
     return (
         <div className="h-screen flex flex-col">
@@ -52,7 +398,8 @@ export default function AdminApplicants() {
                             background: "#BDBDBF",
                             marginBottom: "24px"
                         }} />
-                        {/* Controls */}
+                        
+                        {/* Controls - Improved Layout */}
                         <div className="flex justify-between items-center mb-6 w-full" style={{ alignSelf: "stretch" }}>
                             {/* Left controls */}
                             <div className="flex items-center gap-4">
@@ -60,10 +407,10 @@ export default function AdminApplicants() {
                                 <div
                                     className="flex items-center"
                                     style={{
-                                        width: "468px",
+                                        width: "400px",
                                         height: "40px",
                                         padding: "8px 16px",
-                                        gap: "23px",
+                                        gap: "12px",
                                         borderRadius: "12px",
                                         border: "2px solid #BDBDBF",
                                         background: "#FFF"
@@ -75,109 +422,349 @@ export default function AdminApplicants() {
                                     <input
                                         type="text"
                                         value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                        placeholder="Search applicants"
+                                        onChange={e => handleSearchChange(e.target.value)}
+                                        placeholder="Search applicants..."
                                         style={{
                                             border: "none",
                                             outline: "none",
                                             background: "transparent",
-                                            color: "#BDBDBF",
+                                            color: "#585859",
                                             fontFamily: "Typold, sans-serif",
                                             fontSize: "16px",
                                             fontWeight: 300,
                                             lineHeight: "normal",
                                             flex: 1,
-                                            marginLeft: "10px"
+                                            width: "100%"
                                         }}
                                     />
                                 </div>
-                                {/* Global Actions Button */}
-                                <button
-                                    className="flex items-center"
-                                    style={{
-                                        height: "40px",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        color: "#585859",
-                                        fontFamily: "Typold, sans-serif",
-                                        fontSize: "16px",
-                                        fontWeight: 500,
-                                        lineHeight: "normal",
-                                        background: "#FFF",
-                                        border: "none",
-                                        gap: "10px",
-                                        cursor: "pointer"
-                                    }}
-                                    onClick={() => setGlobalActionsOpen(open => !open)}
-                                >
-                                    Global Actions
-                                    {globalActionsOpen ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                            <path d="M10.8711 7.29013L3.67679 15.5122C2.82815 16.4821 3.51691 18 4.80565 18H19.1943C20.4831 18 21.1719 16.4821 20.3232 15.5122L13.1289 7.29013C12.5312 6.60714 11.4688 6.60714 10.8711 7.29013Z" fill="#FBFBFE"/>
+                                
+                                {/* Global Actions Button - Fixed positioning */}
+                                <div className="relative" ref={globalActionsRef}>
+                                    <button
+                                        className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
+                                        style={{
+                                            height: "40px",
+                                            padding: "8px 16px",
+                                            borderRadius: "8px",
+                                            border: "2px solid #BDBDBF",
+                                            color: "#585859",
+                                            fontFamily: "Typold, sans-serif",
+                                            fontSize: "16px",
+                                            fontWeight: 500,
+                                            lineHeight: "normal",
+                                            gap: "8px",
+                                            cursor: "pointer",
+                                            minWidth: "140px"
+                                        }}
+                                        onClick={() => {
+                                            setGlobalActionsOpen(open => !open);
+                                            setFilterByOpen(false);
+                                            setSortByOpen(false);
+                                        }}
+                                    >
+                                        Global Actions
+                                        {selectedApplications.size > 0 && (
+                                            <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                                {selectedApplications.size}
+                                            </span>
+                                        )}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path fillRule="evenodd" d="M8 13a.5.5 0 0 1-.5-.5V3.707L5.354 5.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 3.707V12.5A.5.5 0 0 1 8 13z"/>
                                         </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                            <path d="M10.8711 16.7099L3.67679 8.48776C2.82815 7.51788 3.51691 6 4.80565 6H19.1943C20.4831 6 21.1719 7.51788 20.3232 8.48775L13.1289 16.7099C12.5312 17.3929 11.4688 17.3929 10.8711 16.7099Z" fill="#585859"/>
-                                        </svg>
+                                    </button>
+                                    
+                                    {/* Global Actions Dropdown - Improved positioning */}
+                                    {globalActionsOpen && (
+                                        <div className="absolute top-full mt-2 left-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[250px]">
+                                            <div className="p-3">
+                                                {selectedApplications.size === 0 ? (
+                                                    <div className="px-3 py-3 text-sm text-gray-500 text-center">
+                                                        Select applications to perform bulk actions
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="px-3 py-2 text-sm font-semibold text-gray-700 border-b border-gray-100 mb-2">
+                                                            {selectedApplications.size} application{selectedApplications.size !== 1 ? 's' : ''} selected
+                                                        </div>
+                                                        <button
+                                                            onClick={handleBulkApprove}
+                                                            disabled={bulkActionLoading}
+                                                            className="w-full text-left px-3 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                            </svg>
+                                                            {bulkActionLoading ? 'Approving...' : 'Bulk Approve'}
+                                                        </button>
+                                                        <button
+                                                            onClick={handleBulkReject}
+                                                            disabled={bulkActionLoading}
+                                                            className="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                                            </svg>
+                                                            {bulkActionLoading ? 'Rejecting...' : 'Bulk Reject'}
+                                                        </button>
+                                                        <div className="border-t border-gray-100 mt-2 pt-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedApplications(new Set());
+                                                                    setGlobalActionsOpen(false);
+                                                                }}
+                                                                className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
+                                                            >
+                                                                Clear Selection
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
                                     )}
-                                </button>
+                                </div>
                             </div>
+                            
                             {/* Right controls */}
                             <div className="flex items-center gap-4">
-                                {/* Filter By Button */}
-                                <button
-                                    className="flex items-center"
-                                    style={{
-                                        height: "40px",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        color: "#585859",
-                                        fontFamily: "Typold, sans-serif",
-                                        fontSize: "16px",
-                                        fontWeight: 500,
-                                        lineHeight: "normal",
-                                        background: "#FFF",
-                                        border: "none",
-                                        gap: "10px",
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    Filter By
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path d="M9 15.75C9 15.3358 9.33579 15 9.75 15H14.25C14.6642 15 15 15.3358 15 15.75C15 16.1642 14.6642 16.5 14.25 16.5H9.75C9.33579 16.5 9 16.1642 9 15.75Z" fill="#585859"/>
-                                        <path d="M6 11.25C6 10.8358 6.33579 10.5 6.75 10.5H17.25C17.6642 10.5 18 10.8358 18 11.25C18 11.6642 17.6642 12 17.25 12H6.75C6.33579 12 6 11.6642 6 11.25Z" fill="#585859"/>
-                                        <path d="M3 6.75C3 6.33579 3.33579 6 3.75 6H20.25C20.6642 6 21 6.33579 21 6.75C21 7.16421 20.6642 7.5 20.25 7.5H3.75C3.33579 7.5 3 7.16421 3 6.75Z" fill="#585859"/>
-                                    </svg>
-                                </button>
-                                {/* Sort By Button */}
-                                <button
-                                    className="flex items-center"
-                                    style={{
-                                        height: "40px",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        color: "#585859",
-                                        fontFamily: "Typold, sans-serif",
-                                        fontSize: "16px",
-                                        fontWeight: 500,
-                                        lineHeight: "normal",
-                                        background: "#FFF",
-                                        border: "none",
-                                        gap: "10px",
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    Sort By
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path d="M5.25 3.75C5.25 3.33579 4.91421 3 4.5 3C4.08579 3 3.75 3.33579 3.75 3.75L3.75 16.9393L2.03033 15.2197C1.73744 14.9268 1.26256 14.9268 0.96967 15.2197C0.676777 15.5126 0.676777 15.9874 0.96967 16.2803L3.9684 19.2791L3.97955 19.29C4.04913 19.3571 4.12848 19.4082 4.21291 19.4431C4.30134 19.4798 4.39831 19.5 4.5 19.5C4.60169 19.5 4.69866 19.4798 4.78709 19.4431C4.87555 19.4065 4.95842 19.3522 5.03033 19.2803L8.03033 16.2803C8.32322 15.9874 8.32322 15.5126 8.03033 15.2197C7.73744 14.9268 7.26256 14.9268 6.96967 15.2197L5.25 16.9393L5.25 3.75Z" fill="#585859"/>
-                                        <path d="M10.5 5.25C10.5 4.83579 10.8358 4.5 11.25 4.5H21.75C22.1642 4.5 22.5 4.83579 22.5 5.25C22.5 5.66421 22.1642 6 21.75 6H11.25C10.8358 6 10.5 5.66421 10.5 5.25Z" fill="#585859"/>
-                                        <path d="M11.25 9C10.8358 9 10.5 9.33579 10.5 9.75C10.5 10.1642 10.8358 10.5 11.25 10.5H18.75C19.1642 10.5 19.5 10.1642 19.5 9.75C19.5 9.33579 19.1642 9 18.75 9H11.25Z" fill="#585859"/>
-                                        <path d="M11.25 13.5C10.8358 13.5 10.5 13.8358 10.5 14.25C10.5 14.6642 10.8358 15 11.25 15H15.75C16.1642 15 16.5 14.6642 16.5 14.25C16.5 13.8358 16.1642 13.5 15.75 13.5H11.25Z" fill="#585859"/>
-                                        <path d="M11.25 18C10.8358 18 10.5 18.3358 10.5 18.75C10.5 19.1642 10.8358 19.5 11.25 19.5H12.75C13.1642 19.5 13.5 19.1642 13.5 18.75C13.5 18.3358 13.1642 18 12.75 18H11.25Z" fill="#585859"/>
-                                    </svg>
-                                </button>
+                                {/* Filter By Button with Dropdown */}
+                                <div className="relative" ref={filterDropdownRef}>
+                                    <button
+                                        className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
+                                        style={{
+                                            height: "40px",
+                                            padding: "8px 16px",
+                                            borderRadius: "8px",
+                                            border: "2px solid #BDBDBF",
+                                            color: "#585859",
+                                            fontFamily: "Typold, sans-serif",
+                                            fontSize: "16px",
+                                            fontWeight: 500,
+                                            lineHeight: "normal",
+                                            gap: "8px",
+                                            cursor: "pointer",
+                                            minWidth: "110px"
+                                        }}
+                                        onClick={() => {
+                                            setFilterByOpen(!filterByOpen);
+                                            setSortByOpen(false);
+                                            setGlobalActionsOpen(false);
+                                        }}
+                                    >
+                                        Filter By
+                                        {(selectedFilters.type || selectedFilters.status) && (
+                                            <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                                {(selectedFilters.type ? 1 : 0) + (selectedFilters.status ? 1 : 0)}
+                                            </span>
+                                        )}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    {/* Filter Dropdown */}
+                                    {filterByOpen && (
+                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[220px]">
+                                            <div className="p-4">
+                                                {/* Type Filter */}
+                                                <div className="mb-4">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="typeFilter"
+                                                                value=""
+                                                                checked={selectedFilters.type === ''}
+                                                                onChange={(e) => handleFilterChange('type', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            All Types
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="typeFilter"
+                                                                value="new"
+                                                                checked={selectedFilters.type === 'new'}
+                                                                onChange={(e) => handleFilterChange('type', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            New
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="typeFilter"
+                                                                value="renewal"
+                                                                checked={selectedFilters.type === 'renewal'}
+                                                                onChange={(e) => handleFilterChange('type', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Renewal
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="typeFilter"
+                                                                value="duplicate"
+                                                                checked={selectedFilters.type === 'duplicate'}
+                                                                onChange={(e) => handleFilterChange('type', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Duplicate
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Status Filter */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="statusFilter"
+                                                                value=""
+                                                                checked={selectedFilters.status === ''}
+                                                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            All Statuses
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="statusFilter"
+                                                                value="verifying"
+                                                                checked={selectedFilters.status === 'verifying'}
+                                                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Verifying
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="statusFilter"
+                                                                value="resubmission"
+                                                                checked={selectedFilters.status === 'resubmission'}
+                                                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Resubmission
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="statusFilter"
+                                                                value="rejected"
+                                                                checked={selectedFilters.status === 'rejected'}
+                                                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Rejected
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="statusFilter"
+                                                                value="approved"
+                                                                checked={selectedFilters.status === 'approved'}
+                                                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                                className="mr-2"
+                                                            />
+                                                            Approved
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Clear Filters */}
+                                                <div className="mt-4 pt-3 border-t border-gray-100">
+                                                    <button
+                                                        onClick={handleClearFilters}
+                                                        className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                                                    >
+                                                        Clear All Filters
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* Sort By Button with Dropdown */}
+                                <div className="relative" ref={sortDropdownRef}>
+                                    <button
+                                        className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
+                                        style={{
+                                            height: "40px",
+                                            padding: "8px 16px",
+                                            borderRadius: "8px",
+                                            border: "2px solid #BDBDBF",
+                                            color: "#585859",
+                                            fontFamily: "Typold, sans-serif",
+                                            fontSize: "16px",
+                                            fontWeight: 500,
+                                            lineHeight: "normal",
+                                            gap: "8px",
+                                            cursor: "pointer",
+                                            minWidth: "100px"
+                                        }}
+                                        onClick={() => {
+                                            setSortByOpen(!sortByOpen);
+                                            setFilterByOpen(false);
+                                            setGlobalActionsOpen(false);
+                                        }}
+                                    >
+                                        Sort By
+                                        {selectedSort !== 'date_desc' && (
+                                            <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                                1
+                                            </span>
+                                        )}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M3.5 2.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 11.293V2.5zm3.5 1a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM7.5 6a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 3a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    {/* Sort Dropdown */}
+                                    {sortByOpen && (
+                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[280px]">
+                                            <div className="p-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="sortBy"
+                                                            value="date_desc"
+                                                            checked={selectedSort === 'date_desc'}
+                                                            onChange={(e) => handleSortChange(e.target.value)}
+                                                            className="mr-2"
+                                                        />
+                                                        Date (Newest First)
+                                                    </label>
+                                                    <label className="flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="sortBy"
+                                                            value="date_asc"
+                                                            checked={selectedSort === 'date_asc'}
+                                                            onChange={(e) => handleSortChange(e.target.value)}
+                                                            className="mr-2"
+                                                        />
+                                                        Date (Oldest First)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
+                        
                         {/* Table Header and Applicants */}
                         <div
                             className="flex flex-col items-center"
@@ -188,11 +775,63 @@ export default function AdminApplicants() {
                         >
                             <AdminApplicantPreviewHeader
                                 allSelected={allSelected}
-                                onSelectAll={() => setAllSelected((s) => !s)}
+                                onSelectAll={handleSelectAll}
                             />
-                            {/* Example applicant rows */}
-                            {applicants.map((applicant) => (
-                                <AdminApplicantPreview key={applicant.id} applicant={applicant} />
+                            
+                            {/* Loading state */}
+                            {loading && applicants.length === 0 && (
+                                <div className="flex items-center justify-center p-8 w-full">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#03267F]"></div>
+                                        <div className="text-[#03267F] text-lg">Loading applications...</div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Refreshing indicator */}
+                            {loading && applicants.length > 0 && (
+                                <div className="flex items-center justify-center p-2 w-full bg-blue-50 border border-blue-200 rounded">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#03267F]"></div>
+                                        <div className="text-[#03267F] text-sm">Updating...</div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Error state */}
+                            {error && (
+                                <div className="flex items-center justify-center p-8 w-full">
+                                    <div className="text-red-600 text-center">
+                                        <p>Error loading applications: {error}</p>
+                                        <button 
+                                            onClick={fetchApplications}
+                                            className="mt-2 px-4 py-2 bg-[#03267F] text-white rounded hover:bg-blue-700"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* No data state */}
+                            {!loading && !error && applicants.length === 0 && (
+                                <div className="flex items-center justify-center p-8 w-full">
+                                    <div className="text-gray-500 text-center">
+                                        <p>No applications found</p>
+                                        {search && <p className="text-sm">Try adjusting your search terms</p>}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Applicant rows */}
+                            {!error && applicants.map((applicant) => (
+                                <AdminApplicantPreview 
+                                    key={applicant.id} 
+                                    applicant={applicant}
+                                    isSelected={selectedApplications.has(applicant.id)}
+                                    onSelect={(isSelected) => handleApplicationSelect(applicant.id, isSelected)}
+                                    onView={() => handleViewApplication(applicant)}
+                                />
                             ))}
                         </div>
                     </div>
@@ -200,6 +839,14 @@ export default function AdminApplicants() {
             </div>
             {/* Fixed AdminNavBar */}
             <AdminNavBar />
+            
+            {/* Application View Modal */}
+            <ApplicationViewModal 
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                applicant={selectedApplicant}
+                onApplicationUpdated={fetchApplications}
+            />
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 
 /**
  * Props:
@@ -9,6 +9,9 @@ import React, { useState } from "react";
  *     status: string, // One of: "Unchecked", "Verifying", "Approval", "Rejected", "Resubmission"
  *     date: string,
  *   }
+ * - isSelected: boolean - Whether this application is selected for bulk actions
+ * - onSelect: function(isSelected: boolean) - Called when checkbox is clicked
+ * - onView: function - Called when View button is clicked
  */
 
 // Status color mapping
@@ -20,12 +23,11 @@ const STATUS_STYLES = {
     Resubmission:{ bg: "#FB7945", text: "#5D2911" },
 };
 
-export default function ApplicAdminApplicantPreview({ applicant }) {
+const ApplicAdminApplicantPreview = memo(({ applicant, isSelected = false, onSelect, onView }) => {
     const status = applicant.status || "Unchecked";
     const { bg, text } = STATUS_STYLES[status] || STATUS_STYLES.Unchecked;
 
     // Checkbox state
-    const [checked, setChecked] = useState(false);
     const [hovered, setHovered] = useState(false);
 
     // Row state
@@ -35,7 +37,7 @@ export default function ApplicAdminApplicantPreview({ applicant }) {
     // Checkbox style logic
     let checkboxBorder = "#BDBDBF";
     let checkboxBg = "#FFF";
-    if (checked) {
+    if (isSelected) {
         checkboxBorder = "#717173";
         checkboxBg = "#717173";
     } else if (hovered) {
@@ -68,7 +70,7 @@ export default function ApplicAdminApplicantPreview({ applicant }) {
                 rowGap: "72px",
                 flexShrink: 0,
                 gridTemplateRows: "1fr",
-                gridTemplateColumns: "auto auto 1fr 1fr auto auto auto",
+                gridTemplateColumns: "auto auto 1fr 1fr auto auto",
                 alignItems: "center",
                 background: rowBg,
                 border: rowBorder,
@@ -119,12 +121,14 @@ export default function ApplicAdminApplicantPreview({ applicant }) {
                 tabIndex={0}
                 onClick={e => {
                     e.stopPropagation();
-                    setChecked((c) => !c);
+                    if (onSelect) {
+                        onSelect(!isSelected);
+                    }
                 }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
-                {checked && (
+                {isSelected && (
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M15.9206 4.96209C16.2819 4.59597 16.8677 4.59597 17.229 4.96209C17.5859 5.32371 17.5903 5.90727 17.2422 6.27434L9.85031 15.0122C9.8432 15.0212 9.8356 15.0298 9.82756 15.0379C9.46625 15.404 8.88046 15.404 8.51915 15.0379L4.02098 10.4799C3.65967 10.1137 3.65967 9.52015 4.02098 9.15403C4.38229 8.78791 4.96808 8.78791 5.32939 9.15403L9.14548 13.0209L15.8961 4.99013C15.9037 4.98029 15.9119 4.97093 15.9206 4.96209Z" fill="#FFF"/>
                     </svg>
@@ -199,41 +203,54 @@ export default function ApplicAdminApplicantPreview({ applicant }) {
             >
                 {applicant.date}
             </div>
-            {/* Action button */}
-            <div
-                className="flex items-center justify-center"
-                style={{
-                    height: 24,
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    background: "#0433A9",
-                    color: "#FBFBFE",
-                    fontFamily: "Typold, sans-serif",
-                    fontSize: 16,
-                    fontStyle: "normal",
-                    fontWeight: 500,
-                    lineHeight: "normal",
-                    letterSpacing: "0.32px",
-                    border: "none",
-                    cursor: "pointer",
-                }}
-            >
-                <button
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+                {/* View button */}
+                <div
+                    className="flex items-center justify-center"
                     style={{
-                        background: "#0433A9",
-                        border: "none",
-                        color: "#FBFBFE",
-                        font: "inherit",
-                        cursor: "pointer",
-                        padding: 0,
+                        height: 24,
+                        padding: "8px 12px",
                         borderRadius: 8,
-                        width: "100%",
-                        height: "100%",
+                        background: "#0433A9",
+                        color: "#FBFBFE",
+                        fontFamily: "Typold, sans-serif",
+                        fontSize: 16,
+                        fontStyle: "normal",
+                        fontWeight: 500,
+                        lineHeight: "normal",
+                        letterSpacing: "0.32px",
+                        border: "none",
+                        cursor: "pointer",
                     }}
                 >
-                    View
-                </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onView && onView();
+                        }}
+                        style={{
+                            background: "#0433A9",
+                            border: "none",
+                            color: "#FBFBFE",
+                            font: "inherit",
+                            cursor: "pointer",
+                            padding: 0,
+                            borderRadius: 8,
+                            width: "100%",
+                            height: "100%",
+                        }}
+                    >
+                        View
+                    </button>
+                </div>
+                
+
             </div>
         </div>
     );
-}
+});
+
+ApplicAdminApplicantPreview.displayName = 'ApplicAdminApplicantPreview';
+
+export default ApplicAdminApplicantPreview;

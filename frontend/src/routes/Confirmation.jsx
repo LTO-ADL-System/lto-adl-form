@@ -88,13 +88,20 @@ const Confirmation = ({ onConfirmation, userEmail, isLoading: appLoading }) => {
     const handleSuccessContinue = () => {
         setShowSuccess(false);
         
-        // Navigate based on the action (signup or login)
+        // Navigate based on the action (signup or login) and user type
         if (verificationResult?.action === 'signup') {
             // For signup, redirect to landing page as per requirements
             navigate('/');
         } else {
-            // For login, redirect to home page
-            navigate('/home');
+            // For login, check if user is admin
+            const isAdmin = verificationResult?.user?.isAdmin || verificationResult?.user?.email === 'madalto.official@gmail.com';
+            if (isAdmin) {
+                // Redirect admin users to dashboard
+                navigate('/dashboard');
+            } else {
+                // Redirect regular users to home page
+                navigate('/home');
+            }
         }
     };
 
