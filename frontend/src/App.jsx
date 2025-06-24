@@ -18,6 +18,9 @@ import BottomBorder from "./components/BottomBorder.jsx";
 import Home from './routes/Home.jsx';
 import Profile from "./routes/Profile.jsx";
 import Application from './routes/Application.jsx';
+import AdminDashboard from './components/AdminDashboard';
+// Import AdminApplicants for routing
+import AdminApplicants from './components/AdminApplicants';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,6 +28,9 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [pendingAuthData, setPendingAuthData] = useState(null); // Store auth data during OTP flow
     const location = useLocation();
+
+    const isDashboard = location.pathname === "/dashboard";
+    const isApplicants = location.pathname === "/applicants";
 
     // Check authentication status on app startup
     useEffect(() => {
@@ -67,7 +73,7 @@ function App() {
     const handleLogin = async (email, password) => {
         try {
             const response = await authService.loginRequest(email, password);
-            
+
             if (response.success) {
                 // Store the auth data for OTP verification
                 setPendingAuthData({
@@ -75,8 +81,8 @@ function App() {
                     password,
                     action: 'login'
                 });
-                return { 
-                    success: true, 
+                return {
+                    success: true,
                     message: 'OTP sent to your email. Please check your inbox.',
                     requiresOTP: true
                 };
@@ -106,7 +112,7 @@ function App() {
 
         try {
             const response = await authService.signUpRequest(email, password);
-            
+
             if (response.success) {
                 // Store the auth data for OTP verification
                 setPendingAuthData({
@@ -137,20 +143,20 @@ function App() {
         try {
             const { email, password, action } = pendingAuthData;
             const response = await authService.verifyOTP(email, otpCode, action, password);
-            
+
             if (response.success && response.data) {
                 const userData = {
                     id: response.data.user_id,
                     email: response.data.email,
                     isAdmin: response.data.email === 'madalto.official@gmail.com'
                 };
-                
+
                 setCurrentUser(userData);
                 setIsAuthenticated(true);
                 setPendingAuthData(null); // Clear pending data
-                
-                return { 
-                    success: true, 
+
+                return {
+                    success: true,
                     user: userData,
                     action: action // Return action to determine navigation
                 };
@@ -191,8 +197,8 @@ function App() {
     return (
         <div className="min-h-screen flex flex-col bg-red-800">
             {/* Conditional Navigation */}
-            {showOnboardingNav && <OnboardingNavBar />}
-            {showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
+            {!isDashboard && !isApplicants && showOnboardingNav && <OnboardingNavBar />}
+            {!isDashboard && !isApplicants && showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
 
             {/* Routes */}
             <Routes>
@@ -229,8 +235,8 @@ function App() {
                         isAuthenticated ? (
                             <Navigate to="/home" replace />
                         ) : (
-                            <Confirmation 
-                                onConfirmation={handleConfirmation} 
+                            <Confirmation
+                                onConfirmation={handleConfirmation}
                                 userEmail={pendingAuthData?.email}
                                 isLoading={isLoading}
                             />
@@ -258,15 +264,25 @@ function App() {
                     }
                 />
 
-                {/* Catch all route - redirect based on auth status */}
+                {/* Admin Dashboard Route */}
                 <Route
-                    path="*"
-                    element={<Navigate to={isAuthenticated ? "/home" : "/"} replace />}
+                    path="/dashboard"
+                    element={
+                        isAuthenticated ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                    }
+                />
+
+                {/* Admin Applicants Route */}
+                <Route
+                    path="/applicants"
+                    element={
+                        isAuthenticated ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                    }
                 />
             </Routes>
 
-            {/*show BottomBorder only on public pages*/}
-            {showOnboardingNav && <BottomBorder />}
+            {/* Show BottomBorder only on public pages and not on /dashboard or /applicants */}
+            {!isDashboard && !isApplicants && showOnboardingNav && <BottomBorder />}
         </div>
     );
 }
