@@ -105,7 +105,6 @@
             { "value": "Elementary", "label": "Elementary" },
             { "value": "High School", "label": "High School" },
             { "value": "College", "label": "College" },
-            { "value": "Graduate", "label": "Graduate" },
             { "value": "Post Graduate", "label": "Post Graduate" }
           ],
           "gridColumn": 4
