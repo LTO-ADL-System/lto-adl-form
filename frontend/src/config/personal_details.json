@@ -1,0 +1,350 @@
+{
+  "sections": [
+    {
+      "title": "Personal Information",
+      "fields": [
+        {
+          "name": "family_name",
+          "label": "Last Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1
+        },
+        {
+          "name": "first_name",
+          "label": "First Name",
+          "type": "text",
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1
+        },
+        {
+          "name": "middle_name",
+          "label": "Middle Name",
+          "type": "text",
+          "placeholder": "eg. Santos",
+          "required": false,
+          "gridColumn": 1
+        },
+        {
+          "name": "sex",
+          "label": "Sex",
+          "type": "select",
+          "placeholder": "Select Sex",
+          "required": true,
+          "options": [
+            { "value": "Male", "label": "Male" },
+            { "value": "Female", "label": "Female" }
+          ],
+          "gridColumn": 2
+        },
+        {
+          "name": "birthdate",
+          "label": "Birthdate",
+          "type": "date",
+          "required": true,
+          "gridColumn": 2
+        },
+        {
+          "name": "civil_status",
+          "label": "Civil Status",
+          "type": "select",
+          "placeholder": "Civil Status",
+          "required": true,
+          "options": [
+            { "value": "Single", "label": "Single" },
+            { "value": "Married", "label": "Married" },
+            { "value": "Divorced", "label": "Divorced" },
+            { "value": "Widowed", "label": "Widowed" },
+            { "value": "Separated", "label": "Separated" }
+          ],
+          "gridColumn": 2
+        },
+        {
+          "name": "height",
+          "label": "Height (cm)",
+          "type": "number",
+          "placeholder": "cm",
+          "required": true,
+          "step": "0.1",
+          "gridColumn": 3
+        },
+        {
+          "name": "weight",
+          "label": "Weight (kg)",
+          "type": "number",
+          "placeholder": "kg",
+          "required": true,
+          "step": "0.1",
+          "gridColumn": 3
+        },
+        {
+          "name": "contact_num",
+          "label": "Contact Number",
+          "type": "tel",
+          "placeholder": "+63xxxxxxxxxx",
+          "required": true,
+          "gridColumn": 3
+        },
+        {
+          "name": "nationality",
+          "label": "Nationality",
+          "type": "text",
+          "placeholder": "Filipino",
+          "required": true,
+          "gridColumn": 4
+        },
+        {
+          "name": "educational_attainment",
+          "label": "Highest Educational Attainment",
+          "type": "select",
+          "placeholder": "Select Educational Level",
+          "required": true,
+          "options": [
+            { "value": "Elementary", "label": "Elementary" },
+            { "value": "High School", "label": "High School" },
+            { "value": "College", "label": "College" },
+            { "value": "Graduate", "label": "Graduate" },
+            { "value": "Post Graduate", "label": "Post Graduate" }
+          ],
+          "gridColumn": 4
+        },
+        {
+          "name": "birthplace",
+          "label": "Birthplace",
+          "type": "text",
+          "placeholder": "Birthplace",
+          "required": true,
+          "gridColumn": 4
+        },
+        {
+          "name": "tin",
+          "label": "TIN (Tax Identification Number)",
+          "type": "text",
+          "placeholder": "123-456-789-000",
+          "required": true,
+          "gridColumn": 4,
+          "maxLength": 15,
+          "pattern": "\\d{3}-\\d{3}-\\d{3}-\\d{3}"
+        },
+        {
+          "name": "father_name",
+          "label": "Father's Name",
+          "type": "text",
+          "placeholder": "Father's Name",
+          "required": false,
+          "gridColumn": 5
+        },
+        {
+          "name": "mother_name",
+          "label": "Mother's Name",
+          "type": "text",
+          "placeholder": "Mother's Name",
+          "required": false,
+          "gridColumn": 5
+        },
+        {
+          "name": "spouse_name",
+          "label": "Spouse's Name",
+          "type": "text",
+          "placeholder": "Spouse's Name",
+          "required": false,
+          "gridColumn": 5
+        }
+      ]
+    },
+    {
+      "title": "Address Details",
+      "fields": [
+        {
+          "name": "region",
+          "label": "Region",
+          "type": "select",
+          "placeholder": "Select region",
+          "required": true,
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "province",
+          "label": "Province",
+          "type": "select",
+          "placeholder": "Select province",
+          "required": true,
+          "options": [],
+          "dependsOn": "region",
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "municipality",
+          "label": "Municipality",
+          "type": "select",
+          "placeholder": "Select municipality",
+          "required": true,
+          "options": [],
+          "dependsOn": "province",
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "zip_code",
+          "label": "ZIP Code",
+          "type": "number",
+          "placeholder": "ZIP",
+          "required": true,
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "barangay",
+          "label": "Barangay",
+          "type": "select",
+          "placeholder": "Barangay",
+          "required": true,
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "street_address",
+          "label": "Street/Subdivision/Purok",
+          "type": "text",
+          "placeholder": "Street Name",
+          "required": true,
+          "gridColumn": 1,
+          "rows": 3
+        },
+        {
+          "name": "house_address",
+          "label": "House No./Unit No./Lot/Bldg",
+          "type": "text",
+          "placeholder": "Blk, Lot, Phase/House No./Unit No., Floor No. Bldg Name",
+          "required": true,
+          "gridColumn": 1,
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "title": "Employment Details",
+      "fields": [
+        {
+          "name": "employerBusinessName",
+          "label": "Employer's Business Name",
+          "type": "text",
+          "placeholder": "Business Name",
+          "required": false,
+          "gridColumn": 1
+        },
+        {
+          "name": "employerTelephone",
+          "label": "Employer's Telephone Number",
+          "type": "tel",
+          "placeholder": "Telephone Number",
+          "required": false,
+          "gridColumn": 1
+        },
+        {
+          "name": "employerAddress",
+          "label": "Employer's Contact Address",
+          "type": "text",
+          "placeholder": "Address",
+          "required": false,
+          "gridColumn": 1
+        }
+      ]
+    },
+    {
+      "title": "Emergency Contact",
+      "fields": [
+        {
+          "name": "emergencyContactName",
+          "label": "Emergency Contact Name",
+          "type": "text",
+          "placeholder": "Contact Name",
+          "required": false,
+          "gridColumn": 1
+        },
+        {
+          "name": "emergencyContactNumber",
+          "label": "Emergency Contact Number",
+          "type": "tel",
+          "placeholder": "Contact Number",
+          "required": false,
+          "gridColumn": 1
+        },
+        {
+          "name": "sameAsApplicantAddress",
+          "label": "Same with Applicant's Address",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
+        },
+        {
+          "name": "emergencyHouseNumber",
+          "label": "House No./Unit No./Lot/Bldg.",
+          "type": "text",
+          "placeholder": "Blk, Lot, Phase/House No./Unit No., Floor No. Bldg. Name",
+          "required": true,
+          "gridColumn": 3,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyStreet",
+          "label": "Street/Subdivision/Purok",
+          "type": "text",
+          "placeholder": "Street Name",
+          "required": true,
+          "gridColumn": 3,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyBarangay",
+          "label": "Barangay",
+          "type": "text",
+          "placeholder": "Barangay Name",
+          "required": true,
+          "gridColumn": 3,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyCity",
+          "label": "City / Municipality",
+          "type": "text",
+          "placeholder": "City / Municipality",
+          "required": true,
+          "gridColumn": 4,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyProvince",
+          "label": "Province",
+          "type": "text",
+          "placeholder": "Province",
+          "required": true,
+          "gridColumn": 4,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyRegion",
+          "label": "Region",
+          "type": "text",
+          "placeholder": "Region",
+          "required": true,
+          "gridColumn": 4,
+          "conditionalField": "sameAsApplicantAddress"
+        },
+        {
+          "name": "emergencyZipCode",
+          "label": "Zip Code",
+          "type": "text",
+          "placeholder": "Zip Code",
+          "required": true,
+          "gridColumn": 4,
+          "conditionalField": "sameAsApplicantAddress"
+        }
+      ]
+    }
+  ]
+}

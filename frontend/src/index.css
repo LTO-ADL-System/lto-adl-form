@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -5,7 +7,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: whitesmoke;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,39 +15,62 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+/*a {*/
+/*  font-weight: 500;*/
+/*  !*color: white;*!*/
+/*  !*text-decoration: none;*!*/
+/*}*/
+/*a:hover {*/
+/*  color: #03267F;*/
+/*}*/
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  padding: 0;
   min-width: 320px;
   min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/*h1 {*/
+/*  font-size: 3.2em;*/
+/*  line-height: 1.1;*/
+/*}*/
+
+input[type="checkbox"]{
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: white;
+  border: 2px solid #03267F;
+}
+
+.custom-checkbox:checked {
+  background-color: #03267F;
+  border-color: #03267F;
+}
+
+input{
+  color: black
 }
 
 button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  /*font-size: 1em;*/
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  /*background-color: #1a1a1a;*/
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
@@ -53,6 +78,66 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+
+.cssbuttons-io-button {
+  background: #0433A9;
+  color: white;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  border-radius: 0.9em;
+  border: none;
+  letter-spacing: 0.05em;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem 4rem 1rem 1rem;
+  height: auto;
+
+  box-shadow: inset 0 0 1.6em -0.6em #03267F;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+
+.cssbuttons-io-button .icon {
+  background: white;
+  margin-left: 1em;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.2em;
+  width: 2.2em;
+  border-radius: 0.7em;
+  box-shadow: 0.1em 0.1em 0.6em 0.2em #03267F;
+  right: 0.3em;
+  transition: all 0.3s;
+}
+
+.cssbuttons-io-button:hover .icon {
+  width: calc(100% - 0.6em);
+}
+
+.cssbuttons-io-button .icon svg {
+  width: 1.1em;
+  transition: transform 0.3s;
+  color: #03267F;
+}
+
+.cssbuttons-io-button:hover .icon svg {
+  transform: translateX(0.1em);
+}
+
+.cssbuttons-io-button:active .icon {
+  transform: scale(0.95);
+}
+
+
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -65,4 +150,17 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+button:hover,
+button:focus,
+button:focus-visible {
+  border-color: #03267F !important;
+  outline-color: #03267F !important;
+} 
+
+/* For custom checkboxes, if you use them */
+input[type="checkbox"]:focus {
+  outline: 2px solid #03267F !important;
+  border-color: #03267F !important;
 }

@@ -1,0 +1,236 @@
+{
+  "steps": [
+    {
+      "name": "Personal",
+      "icon": "person",
+      "index": 0
+    },
+    {
+      "name": "License Details",
+      "icon": "car",
+      "index": 1
+    },
+    {
+      "name": "Documents",
+      "icon": "document",
+      "index": 2
+    },
+    {
+      "name": "Finalize",
+      "icon": "finalize",
+      "index": 3
+    }
+  ],
+  "vehicleCategories": [
+    {
+      "id": "A",
+      "icon": "A",
+      "alt": "Motorcycle"
+    },
+    {
+      "id": "A1",
+      "icon": "A1",
+      "alt": "Tricycle"
+    },
+    {
+      "id": "B",
+      "icon": "B",
+      "alt": "Truck small"
+    },
+    {
+      "id": "B1",
+      "icon": "B1",
+      "alt": "Truck medium"
+    },
+    {
+      "id": "B2",
+      "icon": "B2",
+      "alt": "Bus large"
+    },
+    {
+      "id": "C",
+      "icon": "C",
+      "alt": "Car with trailer"
+    },
+    {
+      "id": "D",
+      "icon": "D",
+      "alt": "Truck with trailer"
+    },
+    {
+      "id": "BE",
+      "icon": "BE",
+      "alt": "Truck with trailer"
+    },
+    {
+      "id": "CE",
+      "icon": "CE",
+      "alt": "Truck with trailer"
+    }
+  ],
+  "formSections": [
+    {
+      "id": "organDonation",
+      "title": "Organ Donation",
+      "fields": [
+        {
+          "name": "organDonor",
+          "label": "Organ Donor",
+          "type": "select",
+          "required": true,
+          "placeholder": "Yes or No",
+          "options": [
+            {
+              "value": "yes",
+              "label": "Yes"
+            },
+            {
+              "value": "no",
+              "label": "No"
+            }
+          ],
+          "gridClass": "md:col-span-1"
+        },
+        {
+          "name": "organs",
+          "label": "Organs",
+          "type": "select",
+          "required": false,
+          "placeholder": "Select Organs",
+          "dependsOn": {
+            "field": "organDonor",
+            "value": "yes"
+          },
+          "options": [
+            {
+              "value": "all",
+              "label": "All Organs"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "kidney",
+              "label": "Kidney"
+            },
+            {
+              "value": "liver",
+              "label": "Liver"
+            },
+            {
+              "value": "lungs",
+              "label": "Lungs"
+            }
+          ],
+          "gridClass": "md:col-span-1"
+        }
+      ]
+    },
+    {
+      "id": "drivingConditions",
+      "title": "Driving Conditions",
+      "fields": [
+        {
+          "name": "conditions",
+          "label": "Conditions",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select Conditions",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "corrective-lenses",
+              "label": "Corrective Lenses"
+            },
+            {
+              "value": "hearing-aid",
+              "label": "Hearing Aid"
+            },
+            {
+              "value": "prosthetic-device",
+              "label": "Prosthetic Device"
+            }
+          ],
+          "gridClass": "md:col-span-1"
+        }
+      ]
+    },
+    {
+      "id": "drivingSkill",
+      "title": "Driving Skill Acquisition",
+      "fields": [
+        {
+          "name": "drivingSkill",
+          "label": "Driving Skill",
+          "type": "select",
+          "required": true,
+          "placeholder": "Driving Skill Acquisition",
+          "options": [
+            {
+              "value": "new",
+              "label": "New Driver"
+            },
+            {
+              "value": "renewal",
+              "label": "License Renewal"
+            },
+            {
+              "value": "additional",
+              "label": "Additional Category"
+            },
+            {
+              "value": "conversion",
+              "label": "License Conversion"
+            }
+          ],
+          "gridClass": "md:col-span-1"
+        },
+        {
+          "name": "driverLicenseNumber",
+          "label": "Driver's License Number",
+          "type": "text",
+          "required": true,
+          "placeholder": "A00-25-000000",
+          "gridClass": "md:col-span-1"
+        },
+        {
+          "name": "newApplication",
+          "label": "New Application",
+          "type": "checkbox",
+          "required": false,
+          "gridClass": "md:col-span-1 flex items-end"
+        }
+      ],
+      "validationMessage": {
+        "condition": {
+          "field": "drivingSkill",
+          "isEmpty": true
+        },
+        "message": "Select Acquisition of Skill to Proceed",
+        "className": "p-4 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm"
+      }
+    }
+  ],
+  "vehicleCategorySection": {
+    "title": "Driver's License Vehicle Category",
+    "gridClass": "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+  },
+  "navigation": {
+    "buttons": [
+      {
+        "text": "Save & Exit",
+        "type": "secondary",
+        "className": "px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+      },
+      {
+        "text": "Proceed",
+        "type": "primary",
+        "className": "px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      }
+    ]
+  }
+}
