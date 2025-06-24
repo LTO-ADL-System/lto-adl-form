@@ -127,30 +127,93 @@
           "gridColumn": 4,
           "maxLength": 15,
           "pattern": "\\d{3}-\\d{3}-\\d{3}-\\d{3}"
+        }
+      ]
+    },
+    {
+      "title": "Father's Name",
+      "fields": [
+        {
+          "name": "family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1
         },
         {
-          "name": "father_name",
-          "label": "Father's Name",
+          "name": "first_name",
+          "label": "First Name",
           "type": "text",
-          "placeholder": "Father's Name",
-          "required": false,
-          "gridColumn": 5
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1
         },
         {
-          "name": "mother_name",
-          "label": "Mother's Name",
+          "name": "middle_name",
+          "label": "Middle Name",
           "type": "text",
-          "placeholder": "Mother's Name",
+          "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 5
+          "gridColumn": 1
+        }
+      ]
+    },
+    {
+      "title": "Mother's Name",
+      "fields": [
+        {
+          "name": "family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1
         },
         {
-          "name": "spouse_name",
-          "label": "Spouse's Name",
+          "name": "first_name",
+          "label": "First Name",
           "type": "text",
-          "placeholder": "Spouse's Name",
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1
+        },
+        {
+          "name": "middle_name",
+          "label": "Middle Name",
+          "type": "text",
+          "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 5
+          "gridColumn": 1
+        }
+      ]
+    },
+    {
+      "title": "Spouse's Name",
+      "fields": [
+        {
+          "name": "family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1
+        },
+        {
+          "name": "first_name",
+          "label": "First Name",
+          "type": "text",
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1
+        },
+        {
+          "name": "middle_name",
+          "label": "Middle Name",
+          "type": "text",
+          "placeholder": "eg. Santos",
+          "required": false,
+          "gridColumn": 1
         }
       ]
     },
