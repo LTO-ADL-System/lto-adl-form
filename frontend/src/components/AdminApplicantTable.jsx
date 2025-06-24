@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 
 const STATUS_STYLES = {
-    Unchecked:   { bg: "#E3E3E6", text: "#585859" },
-    Verifying:   { bg: "#FFBF00", text: "#6F5300" },
-    Approval:    { bg: "#3F35FF", text: "#FFFFFF" },
-    Rejected:    { bg: "#FB4548", text: "#5E1517" },
-    Resubmission:{ bg: "#FB7945", text: "#5D2911" },
+    Unchecked:    { bg: "#E3E3E6", text: "#585859" },
+    Verifying:    { bg: "#FFBF00", text: "#6F5300" },
+    Approval:     { bg: "#3F35FF", text: "#FFFFFF" },
+    Approved:     { bg: "#3F35FF", text: "#FFFFFF" },
+    Rejected:     { bg: "#FB4548", text: "#5E1517" },
+    Resubmission: { bg: "#FB7945", text: "#5D2911" },
 };
 
 function StatusBadge({ status }) {
@@ -31,6 +32,23 @@ function StatusBadge({ status }) {
         >
             {status}
         </span>
+    );
+}
+
+function StatusEllipse({ status }) {
+    const { bg } = STATUS_STYLES[status] || STATUS_STYLES.Unchecked;
+    return (
+        <span
+            style={{
+                display: "inline-block",
+                width: 14,
+                height: 14,
+                borderRadius: "50%",
+                background: bg,
+                border: "1.5px solid #BDBDBF",
+                margin: "0 auto",
+            }}
+        ></span>
     );
 }
 
@@ -64,8 +82,7 @@ export default function AdminApplicantTable({ applicants }) {
     const handleCheckAll = () => {
         if (allChecked) {
             // Uncheck all
-            const cleared = {};
-            setCheckedRows(cleared);
+            setCheckedRows({});
         } else {
             // Check all
             const all = {};
@@ -85,13 +102,13 @@ export default function AdminApplicantTable({ applicants }) {
         <div style={{ width: "100%", overflowX: "auto" }}>
             <table
                 style={{
-                    width: "1088px",
-                    minWidth: "1088px",
+                    width: "100%",
+                    minWidth: "0",
                     borderCollapse: "separate",
                     borderSpacing: 0,
                     background: "#FBFBFE",
                     fontFamily: "Typold, sans-serif",
-                }}
+                }}  
             >
                 <thead>
                     <tr style={{
@@ -100,7 +117,19 @@ export default function AdminApplicantTable({ applicants }) {
                         borderBottom: "2px solid #BDBDBF",
                         height: 40,
                     }}>
-                        <th style={{ width: 48, textAlign: "center", padding: 0 }}>
+                        {/* Status ellipse column */}
+                        <th style={{ width: 32, textAlign: "center", padding: 0 }}></th>
+                        <th
+                            style={{
+                                width: 48,
+                                textAlign: "center",
+                                padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: 40,
+                            }}
+                        >
                             {/* Button to check/uncheck all */}
                             <button
                                 onClick={handleCheckAll}
@@ -153,6 +182,10 @@ export default function AdminApplicantTable({ applicants }) {
                                 transition: "background 0.2s",
                             }}
                         >
+                            {/* Status ellipse cell */}
+                            <td style={{ textAlign: "center", width: 32 }}>
+                                <StatusEllipse status={applicant.status} />
+                            </td>
                             <CheckboxCell
                                 checked={!!checkedRows[applicant.id]}
                                 onChange={() => handleRowCheck(applicant.id)}
@@ -204,7 +237,7 @@ export default function AdminApplicantTable({ applicants }) {
                                         borderRadius: 8,
                                         padding: "8px 12px",
                                         cursor: "pointer",
-                                        height: "32px",
+                                        height: "24px",
                                         display: "inline-flex",
                                         alignItems: "center",
                                         justifyContent: "center",
