@@ -1,21 +1,12 @@
 import React from "react";
 
-/**
- * Props:
- * - applicants: array of applicant objects
- * - selectedApplicants: Set or array of selected applicant IDs
- * - onSelect: function(applicantId: string|number, isSelected: boolean)
- * - onView: function(applicant)
- * - onSelectAll: function(isSelected: boolean)
- */
-
 function AdminApplicantTable({
-    applicants = [],
-    selectedApplicants = [],
-    onSelect,
-    onView,
-    onSelectAll,
-}) {
+                                 applicants = [],
+                                 selectedApplicants = [],
+                                 onSelect,
+                                 onView,
+                                 onSelectAll,
+                             }) {
     // Support both Set and array for selectedApplicants
     const isSelected = (id) =>
         Array.isArray(selectedApplicants)
@@ -27,21 +18,37 @@ function AdminApplicantTable({
         applicants.every((app) => isSelected(app.id));
 
     return (
-        <table
+        <div
             style={{
                 width: "100%",
-                minWidth: "1088px",
-                borderCollapse: "separate",
-                borderSpacing: 0,
-                background: "#FBFBFE",
-                fontFamily: "Typold, sans-serif",
-                borderRadius: 8,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                overflowX: "auto",
+                overflowY: "hidden",
+                msOverflowStyle: "none",
+                scrollbarWidth: "none",
+                WebkitOverflowScrolling: "touch",
             }}
+            className="hide-scrollbar"
         >
-            <thead>
+            <style jsx>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+            `}</style>
+            <table
+                style={{
+                    width: "100%",
+                    minWidth: "1088px",
+                    borderCollapse: "separate",
+                    borderSpacing: 0,
+                    background: "#FBFBFE",
+                    fontFamily: "Typold, sans-serif",
+                    borderRadius: 8,
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                }}
+            >
+                <thead>
                 <tr>
-                     <th style={{ width: 32, textAlign: "center", color: "#03267F" }}>
+                    <th style={{ width: 32, textAlign: "center", color: "#03267F" }}>
                         <input
                             type="checkbox"
                             checked={allSelected}
@@ -49,15 +56,15 @@ function AdminApplicantTable({
                             aria-label="Select all"
                         />
                     </th>
- <th                style={{ width: 48, textAlign: "center", color: "#03267F" }}></th>
+                    <th style={{ width: 48, textAlign: "center", color: "#03267F" }}></th>
                     <th style={{ width: 120, color: "#03267F" }}>Type</th>
                     <th style={{ width: 240, color: "#03267F" }}>Name</th>
                     <th style={{ width: 160, color: "#03267F" }}>Status</th>
                     <th style={{ width: 160, color: "#03267F" }}>Date</th>
                     <th style={{ width: 100, color: "#03267F" }}>View</th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 {applicants.map((applicant) => {
                     const typeDisplay = ["New", "Renewal", "Duplicate"].includes(applicant.type)
                         ? applicant.type
@@ -114,22 +121,24 @@ function AdminApplicantTable({
                             </td>
                             {/* Status badge */}
                             <td style={{ textAlign: "center", width: 160 }}>
-                                <span
-                                    style={{
-                                        display: "inline-block",
-                                        minWidth: 80,
-                                        padding: "8px 12px",
-                                        borderRadius: 20,
-                                        background: bg,
-                                        color: text,
-                                        fontFamily: "Typold, sans-serif",
-                                        fontSize: 16,
-                                        fontWeight: 400,
-                                        textAlign: "center",
-                                    }}
-                                >
-                                    {status}
-                                </span>
+                                    <span
+                                        style={{
+                                            display: "inline-block",
+                                            minWidth: 80,
+                                            padding: "4px 10px",
+                                            borderRadius: 20,
+                                            background: bg,
+                                            color: text,
+                                            fontFamily: "Typold, sans-serif",
+                                            fontSize: 14,
+                                            fontWeight: 400,
+                                            textAlign: "center",
+                                            lineHeight: "1",
+                                            margin: "2px 0px",
+                                        }}
+                                    >
+                                        {status}
+                                    </span>
                             </td>
                             {/* Date */}
                             <td style={{
@@ -173,8 +182,9 @@ function AdminApplicantTable({
                         </tr>
                     );
                 })}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     );
 }
 
