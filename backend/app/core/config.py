@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     
     # OTP Configuration
     OTP_EXPIRE_MINUTES: int = 5
-    OTP_LENGTH: int = 6
+    OTP_LENGTH: int = 4
     
     # Supabase Configuration
     SUPABASE_URL: Optional[str] = None
