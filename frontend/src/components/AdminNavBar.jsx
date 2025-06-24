@@ -37,7 +37,7 @@ const AdminNavBar = () => {
         {/* Navigation */}
         <Link
           to="/dashboard"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+          className="group flex items-center gap-2 py-1 px-3 text-md font-semibold transition duration-300 relative"
         >
           <img src={houseFill} alt="Dashboard" className="w-5 h-5" />
           Dashboard
@@ -48,7 +48,7 @@ const AdminNavBar = () => {
         </Link>
         <Link
           to="/applicants"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+          className="group flex items-center gap-2 py-1 px-3 text-md font-semibold transition duration-300 relative"
         >
           <img src={applicantsIcon} alt="Applicants" className="w-5 h-5" />
           Applicants
@@ -61,20 +61,6 @@ const AdminNavBar = () => {
 
       {/* Right side: Notifications and Settings */}
       <div className="flex items-center gap-5">
-        <Link
-          to="#"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
-        >
-          <img src={bellFill} alt="Notifications" className="w-5 h-5" />
-          Notifications
-        </Link>
-        <Link
-          to="#"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
-        >
-          <img src={gearFill} alt="Settings" className="w-5 h-5" />
-          Settings
-        </Link>
         {/* Logout Button */}
         <button
           onClick={handleLogout}
