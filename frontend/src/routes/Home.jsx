@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import NoApplicationContent from '../components/NoApplicationContent';
-import ApplicationInProgressContent from '../components/ApplicationInProgressContent';
-import PendingApprovalContent from '../components/PendingApprovalContent';
-import ApprovedApplicationContent from '../components/ApprovedApplicationContent';
-import AppointmentsList from '../components/AppointmentsList';
-import { useApplications } from '../hooks/useApplications';
+import NoApplicationContent from '../components/NoApplicationContent.jsx';
+import ApplicationInProgressContent from '../components/ApplicationInProgressContent.jsx';
+import PendingApprovalContent from '../components/PendingApprovalContent.jsx';
+import ApprovedApplicationContent from '../components/ApprovedApplicationContent.jsx';
+import AppointmentsList from '../components/AppointmentsList.jsx';
+import { useApplications } from '../hooks/useApplications.js';
 import trash from '../assets/trash2-fill.svg';
 
 const Home = () => {
@@ -72,10 +72,10 @@ const Home = () => {
                             {/* Right Column - Appointments & Recent Activity */}
                             <div className="bg-white rounded-3xl shadow-md border border-gray-200 border-l-26 border-l-[#0433A9] py-8 px-8 flex flex-col min-h-0">
                                 <div className="flex-1 min-h-0 space-y-6">
-                                    {/* Appointments Section */}
-                                    <div className="flex-1 min-h-0">
-                                        <AppointmentsList />
-                                    </div>
+                                    {/*/!* Appointments Section *!/*/}
+                                    {/*<div className="flex-1 min-h-0">*/}
+                                    {/*    <AppointmentsList />*/}
+                                    {/*</div>*/}
                                     
                                     {/* Recent Activity Section */}
                                     <div className="border-t pt-6">
@@ -167,9 +167,9 @@ const RecentActivity = ({ status, applications, loading }) => (
                             {/* Application Form */}
                             <div className="flex items-center gap-3">
                                 <div className={`w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full ${status === 'inprogress' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
-                                <div>
+                                <div className="text-[#03267F]">
                                     <p className="font-medium text-sm lg:text-base">Application Form</p>
-                                    <p className="text-xs lg:text-sm text-blue-200">
+                                    <p className="text-xs lg:text-sm">
                                         {status === 'inprogress' ? 'Resubmission Required' : `Submitted on: ${submissionDate}`}
                                     </p>
                                 </div>
@@ -186,9 +186,9 @@ const RecentActivity = ({ status, applications, loading }) => (
                             {(status === 'pending' || status === 'approved') && (
                                 <div className="flex items-center gap-3">
                                     <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
-                                    <div>
+                                    <div className="text-[#03267F]">
                                         <p className="font-medium text-sm lg:text-base">Verification</p>
-                                        <p className="text-xs lg:text-sm text-blue-200">Under Review</p>
+                                        <p className="text-xs lg:text-sm">Under Review</p>
                                     </div>
                                 </div>
                             )}
@@ -202,9 +202,9 @@ const RecentActivity = ({ status, applications, loading }) => (
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
-                                        <div>
+                                        <div className="text-[#03267F]">
                                             <p className="font-medium text-sm lg:text-base">Approval</p>
-                                            <p className="text-xs lg:text-sm text-blue-200">Application Approved!</p>
+                                            <p className="text-xs lg:text-sm">Application Approved!</p>
                                         </div>
                                     </div>
                                 </>
@@ -218,9 +218,9 @@ const RecentActivity = ({ status, applications, loading }) => (
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-blue-400"></div>
-                                        <div>
+                                        <div className="text-[#03267F]">
                                             <p className="font-medium text-sm lg:text-base">Approval</p>
-                                            <p className="text-xs lg:text-sm text-blue-200">Pending Review</p>
+                                            <p className="text-xs lg:text-sm">Pending Review</p>
                                         </div>
                                     </div>
                                 </>

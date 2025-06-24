@@ -278,15 +278,10 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                 {/* Application Type */}
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Application Type</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {renderCheckboxField("New Application", licenseData.newApplication)}
-                        {renderCheckboxField("Additional License", licenseData.additionalLicense)}
-                        {renderCheckboxField("Conversion from Foreign License", licenseData.conversionFromForeign)}
-                        {renderCheckboxField("Conversion from Military License", licenseData.conversionFromMilitary)}
-                        {renderCheckboxField("Renewal of Expiring License", licenseData.renewalOfExpiring)}
-                        {renderCheckboxField("Renewal of Expired License", licenseData.renewalOfExpired)}
+                        {renderCheckboxField("Renewal of Expiring or Expired License", licenseData.renewalOfExpiring)}
                         {renderCheckboxField("Duplicate License", licenseData.duplicateLicense)}
-                        {renderCheckboxField("Revision of Records", licenseData.revisionOfRecords)}
                     </div>
                 </div>
 
@@ -529,7 +524,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
 
     const renderConfirmDialog = () => (
         showConfirmDialog && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/30">
                 <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Submission</h3>
                     <p className="text-gray-600 mb-6">
@@ -556,7 +551,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
 
     const renderSuccessMessage = () => (
         submitSuccess && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/30">
                 <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 text-center">
                     <div className="mb-4">
                         <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
