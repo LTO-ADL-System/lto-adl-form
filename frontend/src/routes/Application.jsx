@@ -5,9 +5,8 @@ import InitialApplication from "../pages/InitialApplication.jsx";
 import ApplicationType from '../pages/ApplicationType.jsx';
 import PersonalDetails from '../pages/PersonalDetails.jsx';
 import LicenseDetails from '../pages/LicenseDetails.jsx';
-import ApplicationDocuments from '../components/ApplicantDocuments.jsx';
-// import DocumentDetails from '../pages/DocumentDetails.jsx';
-// import FinalizeDetails from '../pages/FinalizeDetails.jsx';
+import ApplicationDocuments from '../pages/ApplicantDocuments.jsx';
+import FinalizeDetails from '../pages/FinalizeDetails.jsx';
 
 const Application = () => {
     const [currentComponent, setCurrentComponent] = useState('one');
@@ -35,17 +34,17 @@ const Application = () => {
             showHeader: false
         },
         'four': { 
-            component: <LicenseDetails onProceed={() => setCurrentComponent('five')} />,
+            component: <LicenseDetails onProceed={() => setCurrentComponent('five')} onBack={() => setCurrentComponent('three')} />,
             showHeader: false
         },
         'five': { 
-            component: <ApplicationDocuments onProceed={() => setCurrentComponent('six')} />,
+            component: <ApplicationDocuments onProceed={() => setCurrentComponent('six')} onBack={() => setCurrentComponent('four')} />,
             showHeader: false
         },
-        // 'six': { 
-        //     component: <FinalizeDetails />,
-        //     showHeader: false
-        // }
+        'six': {
+            component: <FinalizeDetails onBack={() => setCurrentComponent('five')} />,
+            showHeader: false
+        }
     };
 
     // Get current step or fallback to initial
