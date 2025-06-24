@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AdminNavBar from "./AdminNavBar";
-import AdminApplicantPreviewHeader from "./AdminApplicantPreviewHeader";
-import AdminApplicantPreview from "./AdminApplicantPreview";
+import AdminApplicantTable from "./AdminApplicantTable";
 import ApplicationViewModal from "./ApplicationViewModal";
 import adminService from "../services/adminService";
 
@@ -476,7 +475,7 @@ export default function AdminApplicants() {
                                     
                                     {/* Global Actions Dropdown - Improved positioning */}
                                     {globalActionsOpen && (
-                                        <div className="absolute top-full mt-2 left-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[250px]">
+                                        <div className="absolute top-full mt-2 left-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[250px]" style={{ color: "#585859" }}>
                                             <div className="p-3">
                                                 {selectedApplications.size === 0 ? (
                                                     <div className="px-3 py-3 text-sm text-gray-500 text-center">
@@ -565,7 +564,7 @@ export default function AdminApplicants() {
                                     
                                     {/* Filter Dropdown */}
                                     {filterByOpen && (
-                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[220px]">
+                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[220px]" style={{ color: "#585859" }}>
                                             <div className="p-4">
                                                 {/* Type Filter */}
                                                 <div className="mb-4">
@@ -731,7 +730,7 @@ export default function AdminApplicants() {
                                     
                                     {/* Sort Dropdown */}
                                     {sortByOpen && (
-                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[280px]">
+                                        <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[280px]" style={{ color: "#585859" }}>
                                             <div className="p-4">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
                                                 <div className="space-y-2">
@@ -767,17 +766,21 @@ export default function AdminApplicants() {
                         
                         {/* Table Header and Applicants */}
                         <div
-                            className="flex flex-col items-center"
+                            className="w-full"
                             style={{
-                                width: "1088px",
+                                overflowX: "auto",
                                 alignItems: "center",
                             }}
                         >
-                            <AdminApplicantPreviewHeader
-                                allSelected={allSelected}
+                            {/* --- INTEGRATED TABLE --- */}
+                            <AdminApplicantTable
+                                applicants={applicants}
+                                selectedApplicants={Array.from(selectedApplications)}
+                                onSelect={handleApplicationSelect}
+                                onView={handleViewApplication}
                                 onSelectAll={handleSelectAll}
                             />
-                            
+
                             {/* Loading state */}
                             {loading && applicants.length === 0 && (
                                 <div className="flex items-center justify-center p-8 w-full">
@@ -822,17 +825,6 @@ export default function AdminApplicants() {
                                     </div>
                                 </div>
                             )}
-                            
-                            {/* Applicant rows */}
-                            {!error && applicants.map((applicant) => (
-                                <AdminApplicantPreview 
-                                    key={applicant.id} 
-                                    applicant={applicant}
-                                    isSelected={selectedApplications.has(applicant.id)}
-                                    onSelect={(isSelected) => handleApplicationSelect(applicant.id, isSelected)}
-                                    onView={() => handleViewApplication(applicant)}
-                                />
-                            ))}
                         </div>
                     </div>
                 </main>

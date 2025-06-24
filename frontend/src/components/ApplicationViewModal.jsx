@@ -14,6 +14,7 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
             setApplicationDetails(null);
             setError(null);
         }
+        // eslint-disable-next-line
     }, [isOpen, applicant?.id]);
 
     const fetchApplicationDetails = async () => {
@@ -77,22 +78,6 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                     </div>
                 )}
 
-                {/* Debug Info */}
-                {!loading && !error && (
-                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4 text-sm">
-                        <strong>Debug Info:</strong>
-                        <br />Application Details Available: {applicationDetails ? 'Yes' : 'No'}
-                        <br />Applicant Data Available: {applicationDetails?.applicant ? 'Yes' : 'No'}
-                        {applicationDetails?.applicant && (
-                            <>
-                                <br />First Name: {applicationDetails.applicant.first_name || 'empty'}
-                                <br />Family Name: {applicationDetails.applicant.family_name || 'empty'}
-                                <br />Email: {applicationDetails.applicant.email || 'empty'}
-                            </>
-                        )}
-                    </div>
-                )}
-
                 {/* Application Info */}
                 {!loading && !error && applicationDetails && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -102,11 +87,11 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                             <div className="space-y-2">
                                 <div>
                                     <span className="font-medium text-gray-700">Application ID:</span>
-                                    <span className="ml-2">{applicationDetails.application_id || applicant.id || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.application_id || applicant.id || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Type:</span>
-                                    <span className="ml-2">{applicationDetails.application_type?.type_category || applicant.type}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.application_type?.type_category || applicant.type}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Status:</span>
@@ -124,7 +109,7 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Submission Date:</span>
-                                    <span className="ml-2">
+                                    <span className="ml-2" style={{ color: "#47456E" }}>
                                         {applicationDetails.submission_date ? 
                                             new Date(applicationDetails.submission_date).toLocaleDateString() : 
                                             applicant.date
@@ -133,7 +118,7 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Last Updated:</span>
-                                    <span className="ml-2">
+                                    <span className="ml-2" style={{ color: "#47456E" }}>
                                         {applicationDetails.last_updated_date ? 
                                             new Date(applicationDetails.last_updated_date).toLocaleDateString() : 
                                             'N/A'
@@ -149,7 +134,7 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                             <div className="space-y-2">
                                 <div>
                                     <span className="font-medium text-gray-700">Name:</span>
-                                    <span className="ml-2">
+                                    <span className="ml-2" style={{ color: "#47456E" }}>
                                         {applicationDetails.applicant ? 
                                             `${applicationDetails.applicant.first_name || ''} ${applicationDetails.applicant.middle_name || ''} ${applicationDetails.applicant.family_name || ''}`.trim() :
                                             applicant.name
@@ -158,26 +143,26 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Email:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.email || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.email || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Contact Number:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.contact_num || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.contact_num || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Birth Date:</span>
-                                    <span className="ml-2">
+                                    <span className="ml-2" style={{ color: "#47456E" }}>
                                         {applicationDetails.applicant?.birthdate ? 
                                             new Date(applicationDetails.applicant.birthdate).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Address:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.address || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.address || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Nationality:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.nationality || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.nationality || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -188,23 +173,23 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                             <div className="space-y-2">
                                 <div>
                                     <span className="font-medium text-gray-700">Height:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.height ? `${applicationDetails.applicant.height} cm` : 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.height ? `${applicationDetails.applicant.height} cm` : 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Weight:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.weight ? `${applicationDetails.applicant.weight} kg` : 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.weight ? `${applicationDetails.applicant.weight} kg` : 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Eye Color:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.eye_color || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.eye_color || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Civil Status:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.civil_status || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.civil_status || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Blood Type:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.blood_type || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.blood_type || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -215,24 +200,24 @@ const ApplicationViewModal = ({ isOpen, onClose, applicant, onApplicationUpdated
                             <div className="space-y-2">
                                 <div>
                                     <span className="font-medium text-gray-700">Educational Attainment:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.educational_attainment || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.educational_attainment || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Birth Place:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.birthplace || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.birthplace || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">TIN:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.tin || 'N/A'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.tin || 'N/A'}</span>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Organ Donor:</span>
-                                    <span className="ml-2">{applicationDetails.applicant?.is_organ_donor ? 'Yes' : 'No'}</span>
+                                    <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.applicant?.is_organ_donor ? 'Yes' : 'No'}</span>
                                 </div>
                                 {applicationDetails.additional_requirements && (
                                     <div>
                                         <span className="font-medium text-gray-700">Additional Requirements:</span>
-                                        <span className="ml-2">{applicationDetails.additional_requirements}</span>
+                                        <span className="ml-2" style={{ color: "#47456E" }}>{applicationDetails.additional_requirements}</span>
                                     </div>
                                 )}
                             </div>
@@ -314,4 +299,4 @@ const getStatusTextColor = (status) => {
     return colors[status] || '#585859';
 };
 
-export default ApplicationViewModal; 
+export default ApplicationViewModal;
