@@ -3,45 +3,100 @@ import apiService from './api.js';
 class AuthService {
   // Send signup OTP
   async signUpRequest(email, password) {
-    const response = await apiService.post('/auth-supabase/sign-up-request', {
-      email,
-      password
-    }, false);
-    return response;
+    // Send email and password as query parameters
+    const params = new URLSearchParams({
+      email: email,
+      password: password
+    });
+
+    const response = await fetch(`${apiService.baseURL}/auth-supabase/sign-up-request?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'API request failed');
+    }
+
+    return data;
   }
 
   // Send login OTP
   async loginRequest(email, password) {
-    const response = await apiService.post('/auth-supabase/login-request', {
-      email,
-      password
-    }, false);
-    return response;
+    // Send email and password as query parameters
+    const params = new URLSearchParams({
+      email: email,
+      password: password
+    });
+
+    const response = await fetch(`${apiService.baseURL}/auth-supabase/login-request?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'API request failed');
+    }
+
+    return data;
   }
 
   // Verify OTP for signup or login
   async verifyOTP(email, otpCode, action, password = null) {
-    const payload = {
-      email,
+    // Send as query parameters for verify-otp endpoint
+    const params = new URLSearchParams({
+      email: email,
       otp_code: otpCode,
-      action
-    };
-
-    if (action === 'login' && password) {
-      payload.password = password;
-    }
-
-    const response = await apiService.post('/auth-supabase/verify-otp', payload, false);
+      action: action
+    });
     
-    if (response.success && response.data) {
-      // Store tokens and user info
-      apiService.setAuthToken(response.data.access_token);
-      localStorage.setItem('refresh_token', response.data.refresh_token);
-      localStorage.setItem('user_email', response.data.user.email);
-      localStorage.setItem('user_id', response.data.user.id);
+    // Include password for both signup and login actions
+    if (password) {
+      params.append('password', password);
     }
 
-    return response;
+    const response = await fetch(`${apiService.baseURL}/auth-supabase/verify-otp?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'API request failed');
+    }
+
+    if (data.success && data.data) {
+      // Store tokens and user info
+      apiService.setAuthToken(data.data.access_token);
+      localStorage.setItem('refresh_token', data.data.refresh_token);
+      localStorage.setItem('user_email', data.data.email);
+      localStorage.setItem('user_id', data.data.user_id);
+    }
+
+    return data;
   }
 
   // Refresh access token
@@ -51,16 +106,34 @@ class AuthService {
       throw new Error('No refresh token available');
     }
 
-    const response = await apiService.post('/auth-supabase/refresh-token', {
+    // Send refresh_token as query parameter
+    const params = new URLSearchParams({
       refresh_token: refreshToken
-    }, false);
+    });
 
-    if (response.success && response.data) {
-      apiService.setAuthToken(response.data.access_token);
-      localStorage.setItem('refresh_token', response.data.refresh_token);
+    const response = await fetch(`${apiService.baseURL}/auth-supabase/refresh-token?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return response;
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'API request failed');
+    }
+
+    if (data.success && data.data) {
+      apiService.setAuthToken(data.data.access_token);
+      localStorage.setItem('refresh_token', data.data.refresh_token);
+    }
+
+    return data;
   }
 
   // Get user profile

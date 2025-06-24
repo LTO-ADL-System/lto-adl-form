@@ -16,6 +16,10 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
             user_uuid = UUID(user_uuid)
         return db.query(Applicant).filter(Applicant.uuid == user_uuid).first()
 
+    def get_applicant_by_uuid(self, db: Session, *, uuid: str) -> Optional[Applicant]:
+        """Alias for get_by_uuid - Get applicant by Supabase UUID"""
+        return self.get_by_uuid(db, user_uuid=uuid)
+
     def get_by_email(self, db: Session, *, email: str) -> Optional[Applicant]:
         """Get applicant by email"""
         return db.query(Applicant).filter(Applicant.email == email).first()

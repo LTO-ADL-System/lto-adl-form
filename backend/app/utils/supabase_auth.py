@@ -18,7 +18,7 @@ class SupabaseAuth:
         self._otp_store = {}
         self._pending_users = {}
     
-    def generate_otp_code(self, length: int = 6) -> str:
+    def generate_otp_code(self, length: int = 4) -> str:
         """Generate a random OTP code"""
         return ''.join(random.choices(string.digits, k=length))
     
