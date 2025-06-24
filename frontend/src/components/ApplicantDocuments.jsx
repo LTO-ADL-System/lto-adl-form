@@ -2,10 +2,33 @@ import person from "../assets/person.png";
 import car from "../assets/car.png";
 import document from "../assets/document.png";
 import check from "../assets/check.png";
+import React, { useState, useRef } from 'react';
+import FileUploadModal from "./FileUploadModal";
+
 
 const ApplicationDocuments = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentField, setCurrentField] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState({});
+
+  const handleFileUpload = (fieldName) => {
+    setCurrentField(fieldName);
+    setModalOpen(true);
+  };
+
+  const handleFileSelect = (file) => {
+    setUploadedFiles(prev => ({
+      ...prev,
+      [currentField]: file
+    }));
+  };
+
+  const getFileName = (fieldName) => {
+    return uploadedFiles[fieldName]?.name || '';
+  };
+
   return (
-    <div className=" flex flex-col font-sans bg-gray-100">
+    <div className="flex flex-col font-sans bg-gray-100">
       {/* This div is just for spacing, as in your original code */}
       <div className="h-16 flex-shrink-0"></div>
 
@@ -20,7 +43,9 @@ const ApplicationDocuments = () => {
                 {/* Step 1 - Personal */}
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-2">
-                    <img src={person} alt="" width={30} height={30} />
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
                   </div>
                   <span className="text-green-500 font-medium text-sm">
                     Personal
@@ -32,7 +57,9 @@ const ApplicationDocuments = () => {
                 {/* Step 2 - License Details */}
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-2">
-                    <img src={car} alt="" width={30} height={30} />
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
                   </div>
                   <span className="text-green-500 font-medium text-sm">
                     License Details
@@ -44,7 +71,9 @@ const ApplicationDocuments = () => {
                 {/* Step 3 - Documents */}
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                    <img src={document} alt="" width={30} height={30} />
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
                   </div>
                   <span className="text-blue-600 font-medium text-sm">
                     Documents
@@ -55,7 +84,9 @@ const ApplicationDocuments = () => {
                 {/* Step 4 - Finalize */}
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mb-2">
-                    <img src={check} alt="" width={30} height={30} />
+                    <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
                   </div>
                   <span className="text-gray-600 font-medium text-sm">
                     Finalize
@@ -69,7 +100,9 @@ const ApplicationDocuments = () => {
             {/* New components and elements below the steps */}
             <div className="border-t border-gray-200 pt-8 mt-4">
               <div className="flex items-center mb-6">
-                <img src={document} alt="" width={24} height={24} className="mr-2" />
+                <svg className="w-6 h-6 text-gray-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                </svg>
                 <h2 className="text-xl font-semibold text-gray-800">Upload Documentary Requirements</h2>
               </div>
 
@@ -83,12 +116,17 @@ const ApplicationDocuments = () => {
                       </label>
                       <div className="flex items-center border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
                         <input
-                          type="file"
+                          type="text"
                           id="validID"
-                          accept="image/*,.pdf"
+                          value={getFileName('validID')}
+                          placeholder="No file selected"
+                          readOnly
                           className="flex-grow bg-transparent outline-none text-gray-700"
                         />
-                        <button className="ml-2 p-1 text-gray-500 hover:text-gray-700">
+                        <button 
+                          onClick={() => handleFileUpload('validID')}
+                          className="ml-2 p-1 text-gray-500 hover:text-gray-700"
+                        >
                           📁
                         </button>
                       </div>
@@ -99,12 +137,17 @@ const ApplicationDocuments = () => {
                       </label>
                       <div className="flex items-center border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
                         <input
-                          type="file"
+                          type="text"
                           id="medicalCertificate"
-                          accept="image/*,.pdf"
+                          value={getFileName('medicalCertificate')}
+                          placeholder="No file selected"
+                          readOnly
                           className="flex-grow bg-transparent outline-none text-gray-700"
                         />
-                        <button className="ml-2 p-1 text-gray-500 hover:text-gray-700">
+                        <button 
+                          onClick={() => handleFileUpload('medicalCertificate')}
+                          className="ml-2 p-1 text-gray-500 hover:text-gray-700"
+                        >
                           📁
                         </button>
                       </div>
@@ -121,12 +164,17 @@ const ApplicationDocuments = () => {
                       </label>
                       <div className="flex items-center border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
                         <input
-                          type="file"
+                          type="text"
                           id="pdcCertificate"
-                          accept="image/*,.pdf"
+                          value={getFileName('pdcCertificate')}
+                          placeholder="No file selected"
+                          readOnly
                           className="flex-grow bg-transparent outline-none text-gray-700"
                         />
-                        <button className="ml-2 p-1 text-gray-500 hover:text-gray-700">
+                        <button 
+                          onClick={() => handleFileUpload('pdcCertificate')}
+                          className="ml-2 p-1 text-gray-500 hover:text-gray-700"
+                        >
                           📁
                         </button>
                       </div>
@@ -137,12 +185,17 @@ const ApplicationDocuments = () => {
                       </label>
                       <div className="flex items-center border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
                         <input
-                          type="file"
+                          type="text"
                           id="studentDriversPermit"
-                          accept="image/*,.pdf"
+                          value={getFileName('studentDriversPermit')}
+                          placeholder="No file selected"
+                          readOnly
                           className="flex-grow bg-transparent outline-none text-gray-700"
                         />
-                        <button className="ml-2 p-1 text-gray-500 hover:text-gray-700">
+                        <button 
+                          onClick={() => handleFileUpload('studentDriversPermit')}
+                          className="ml-2 p-1 text-gray-500 hover:text-gray-700"
+                        >
                           📁
                         </button>
                       </div>
@@ -169,8 +222,17 @@ const ApplicationDocuments = () => {
           </div>
         </main>
       </div>
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onFileSelect={handleFileSelect}
+        title={`Upload ${currentField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
+      />
     </div>
   );
 };
 
-export default ApplicationDocuments;
+export default ApplicationDocuments
+

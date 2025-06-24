@@ -13,7 +13,7 @@ class EmailOTP(Base):
     
     id = Column(String, primary_key=True, index=True)
     email = Column(String, nullable=False, index=True)
-    otp_code = Column(String(6), nullable=False)
+    otp_code = Column(String(4), nullable=False)
     otp_type = Column(Enum(OTPType), nullable=False)
     is_used = Column(Boolean, default=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
