@@ -18,7 +18,7 @@ import D from "../assets/license_details/D.svg";
 import BE from "../assets/license_details/BE.svg";
 import CE from "../assets/license_details/CE.svg";
 
-const LicenseDetails = () => {
+const LicenseDetails = ({onProceed}) => {
   const [formData, setFormData] = useState({});
   const [selectedVehicleCategory, setSelectedVehicleCategory] = useState('A');
 
@@ -202,13 +202,23 @@ const LicenseDetails = () => {
   );
 
   const renderNavigationButtons = () => (
-      <div className="flex justify-between items-center mt-auto pt-6">
-        {config.navigation.buttons.map((button, index) => (
-            <button key={index} className={button.className}>
-              {button.text}
+     <div className="flex justify-between items-center mt-auto pt-6">
+      {config.navigation.buttons.map((button, index) => {
+        if (button.text === "Proceed") {
+          return (
+            <button key={index} onClick={onProceed} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+              Proceed 
             </button>
-        ))}
-      </div>
+          );
+        }
+
+        return (
+          <button key={index} className={button.className}>
+            {button.text}
+          </button>
+        );
+      })}
+    </div>
   );
 
   return (
