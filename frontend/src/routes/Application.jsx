@@ -31,7 +31,7 @@ const Application = () => {
             showHeader: true
         },
         'three': { 
-            component: <PersonalDetails onProceed={() => setCurrentComponent('four')} />,
+            component: <PersonalDetails onProceed={() => setCurrentComponent('four')} onBack={() => setCurrentComponent('two')} />,
             showHeader: false
         },
         'four': { 

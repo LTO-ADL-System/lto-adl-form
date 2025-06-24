@@ -7,7 +7,7 @@ import document from "../assets/documents.svg";
 import finalize from "../assets/finalize.svg";
 import personalDetailsConfig from "../config/personal_details.json";
 
-const PersonalDetails = ({onProceed}) => {
+const PersonalDetails = ({onProceed, onBack }) => {
     const [formData, setFormData] = useState({});
     const [dynamicOptions, setDynamicOptions] = useState({
         region: [],
@@ -418,7 +418,7 @@ const PersonalDetails = ({onProceed}) => {
                 );
 
             case 'select':
-                const options = getFieldOptions(field);
+                { const options = getFieldOptions(field);
                 const fieldLoading = isFieldLoading(field.name);
                 const fieldError = getFieldError(field.name);
                 
@@ -481,7 +481,7 @@ const PersonalDetails = ({onProceed}) => {
                             <p className="text-red-500 text-sm mt-1">{fieldError}</p>
                         )}
                     </div>
-                );
+                ); }
 
             case 'checkbox':
                 return (
@@ -572,17 +572,34 @@ const PersonalDetails = ({onProceed}) => {
                             {personalDetailsConfig.sections.map(section => renderSection(section))}
 
                             {/* Navigation buttons */}
-                            <div className="flex justify-between items-center mt-auto pt-6">
-                                <button
-                                    className="px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                                    disabled
-                                >
-                                    Save & Exit
-                                </button>
-                                <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" onClick={onProceed}>
-                                    Proceed
-                                </button>
+                            <div className="flex items-center justify-between mt-auto pt-6">
+                                {/* Left - Back button */}
+                                <div>
+                                    <button
+                                        className="px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                                        onClick={onBack}
+                                    >
+                                        Back
+                                    </button>
+                                </div>
+
+                                {/* Right - Save & Proceed buttons */}
+                                <div className="flex gap-4">
+                                    <button
+                                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                        onClick={onProceed}
+                                    >
+                                        Save & Exit
+                                    </button>
+                                    <button
+                                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                        onClick={onProceed}
+                                    >
+                                        Proceed
+                                    </button>
+                                </div>
                             </div>
+
                         </div>
                     </div>
                 </main>
