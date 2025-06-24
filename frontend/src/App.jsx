@@ -17,13 +17,17 @@ import BottomBorder from "./components/BottomBorder.jsx";
 import Home from './routes/Home.jsx';
 import Profile from "./routes/Profile.jsx";
 import Application from './routes/Application.jsx';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
     // PROTOTYPE: Mock authentication state for UI testing
     // TODO: Replace with real authentication when backend is ready
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
     const location = useLocation();
+
+    // Determine if on dashboard route
+    const isDashboard = location.pathname === "/dashboard";
 
     // PROTOTYPE: Comment out real authentication check
     // TODO: Implement real authentication check with backend
@@ -210,11 +214,12 @@ function App() {
     const showOnboardingNav = !isAuthenticated;
     const showAuthenticatedNav = isAuthenticated;
 
+    // Only show user navbars and BottomBorder if not on /dashboard
     return (
         <div className="min-h-screen flex flex-col bg-red-800">
             {/* Conditional Navigation */}
-            {showOnboardingNav && <OnboardingNavBar />}
-            {showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
+            {!isDashboard && showOnboardingNav && <OnboardingNavBar />}
+            {!isDashboard && showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
 
             {/* Routes */}
             <Routes>
@@ -276,15 +281,17 @@ function App() {
                     }
                 />
 
-                {/* Catch all route - redirect based on auth status */}
+                {/* Admin Dashboard Route */}
                 <Route
-                    path="*"
-                    element={<Navigate to={isAuthenticated ? "/home" : "/"} replace />}
+                    path="/dashboard"
+                    element={
+                        isAuthenticated ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                    }
                 />
             </Routes>
 
-            {/*show BottomBorder only on public pages*/}
-            {showOnboardingNav && <BottomBorder />}
+            {/* Show BottomBorder only on public pages and not on /dashboard */}
+            {!isDashboard && showOnboardingNav && <BottomBorder />}
         </div>
     );
 }
