@@ -441,29 +441,29 @@ export default function AdminApplicants() {
                                 
                                 {/* Global Actions Button - Fixed positioning */}
                                 <div className="relative" ref={globalActionsRef}>
-                                    <button
+                                <button
                                         className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
-                                        style={{
-                                            height: "40px",
+                                    style={{
+                                        height: "40px",
                                             padding: "8px 16px",
-                                            borderRadius: "8px",
+                                        borderRadius: "8px",
                                             border: "2px solid #BDBDBF",
-                                            color: "#585859",
-                                            fontFamily: "Typold, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            lineHeight: "normal",
+                                        color: "#585859",
+                                        fontFamily: "Typold, sans-serif",
+                                        fontSize: "16px",
+                                        fontWeight: 500,
+                                        lineHeight: "normal",
                                             gap: "8px",
                                             cursor: "pointer",
                                             minWidth: "140px"
-                                        }}
+                                    }}
                                         onClick={() => {
                                             setGlobalActionsOpen(open => !open);
                                             setFilterByOpen(false);
                                             setSortByOpen(false);
                                         }}
-                                    >
-                                        Global Actions
+                                >
+                                    Global Actions
                                         {selectedApplications.size > 0 && (
                                             <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                                 {selectedApplications.size}
@@ -482,7 +482,7 @@ export default function AdminApplicants() {
                                                     <div className="px-3 py-3 text-sm text-gray-500 text-center">
                                                         Select applications to perform bulk actions
                                                     </div>
-                                                ) : (
+                                    ) : (
                                                     <>
                                                         <div className="px-3 py-2 text-sm font-semibold text-gray-700 border-b border-gray-100 mb-2">
                                                             {selectedApplications.size} application{selectedApplications.size !== 1 ? 's' : ''} selected
@@ -504,9 +504,9 @@ export default function AdminApplicants() {
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                                                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                                                            </svg>
+                                        </svg>
                                                             {bulkActionLoading ? 'Rejecting...' : 'Bulk Reject'}
-                                                        </button>
+                                </button>
                                                         <div className="border-t border-gray-100 mt-2 pt-2">
                                                             <button
                                                                 onClick={() => {
@@ -530,18 +530,18 @@ export default function AdminApplicants() {
                             <div className="flex items-center gap-4">
                                 {/* Filter By Button with Dropdown */}
                                 <div className="relative" ref={filterDropdownRef}>
-                                    <button
+                                <button
                                         className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
-                                        style={{
-                                            height: "40px",
+                                    style={{
+                                        height: "40px",
                                             padding: "8px 16px",
-                                            borderRadius: "8px",
+                                        borderRadius: "8px",
                                             border: "2px solid #BDBDBF",
-                                            color: "#585859",
-                                            fontFamily: "Typold, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            lineHeight: "normal",
+                                        color: "#585859",
+                                        fontFamily: "Typold, sans-serif",
+                                        fontSize: "16px",
+                                        fontWeight: 500,
+                                        lineHeight: "normal",
                                             gap: "8px",
                                             cursor: "pointer",
                                             minWidth: "110px"
@@ -550,9 +550,9 @@ export default function AdminApplicants() {
                                             setFilterByOpen(!filterByOpen);
                                             setSortByOpen(false);
                                             setGlobalActionsOpen(false);
-                                        }}
-                                    >
-                                        Filter By
+                                    }}
+                                >
+                                    Filter By
                                         {(selectedFilters.type || selectedFilters.status) && (
                                             <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                                 {(selectedFilters.type ? 1 : 0) + (selectedFilters.status ? 1 : 0)}
@@ -560,8 +560,8 @@ export default function AdminApplicants() {
                                         )}
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                             <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-                                        </svg>
-                                    </button>
+                                    </svg>
+                                </button>
                                     
                                     {/* Filter Dropdown */}
                                     {filterByOpen && (
@@ -696,18 +696,18 @@ export default function AdminApplicants() {
                                 
                                 {/* Sort By Button with Dropdown */}
                                 <div className="relative" ref={sortDropdownRef}>
-                                    <button
+                                <button
                                         className="flex items-center bg-white hover:bg-gray-50 transition-colors duration-200"
-                                        style={{
-                                            height: "40px",
+                                    style={{
+                                        height: "40px",
                                             padding: "8px 16px",
-                                            borderRadius: "8px",
+                                        borderRadius: "8px",
                                             border: "2px solid #BDBDBF",
-                                            color: "#585859",
-                                            fontFamily: "Typold, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            lineHeight: "normal",
+                                        color: "#585859",
+                                        fontFamily: "Typold, sans-serif",
+                                        fontSize: "16px",
+                                        fontWeight: 500,
+                                        lineHeight: "normal",
                                             gap: "8px",
                                             cursor: "pointer",
                                             minWidth: "100px"
@@ -716,9 +716,9 @@ export default function AdminApplicants() {
                                             setSortByOpen(!sortByOpen);
                                             setFilterByOpen(false);
                                             setGlobalActionsOpen(false);
-                                        }}
-                                    >
-                                        Sort By
+                                    }}
+                                >
+                                    Sort By
                                         {selectedSort !== 'date_desc' && (
                                             <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                                 1
@@ -726,8 +726,8 @@ export default function AdminApplicants() {
                                         )}
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                             <path d="M3.5 2.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 11.293V2.5zm3.5 1a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM7.5 6a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 3a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"/>
-                                        </svg>
-                                    </button>
+                                    </svg>
+                                </button>
                                     
                                     {/* Sort Dropdown */}
                                     {sortByOpen && (
