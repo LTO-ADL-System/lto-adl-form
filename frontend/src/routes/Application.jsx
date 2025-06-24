@@ -5,7 +5,6 @@ import InitialApplication from "../pages/InitialApplication.jsx";
 import ApplicationType from '../pages/ApplicationType.jsx';
 import PersonalDetails from '../pages/PersonalDetails.jsx';
 import LicenseDetails from '../pages/LicenseDetails.jsx';
-import ApplicationDocuments from '../components/ApplicantDocuments.jsx';
 // import DocumentDetails from '../pages/DocumentDetails.jsx';
 // import FinalizeDetails from '../pages/FinalizeDetails.jsx';
 
@@ -38,10 +37,10 @@ const Application = () => {
             component: <LicenseDetails onProceed={() => setCurrentComponent('five')} />,
             showHeader: false
         },
-        'five': { 
-            component: <ApplicationDocuments onProceed={() => setCurrentComponent('six')} />,
-            showHeader: false
-        },
+        // 'five': { 
+        //     component: <DocumentDetails onProceed={() => setCurrentComponent('six')} />,
+        //     showHeader: false
+        // },
         // 'six': { 
         //     component: <FinalizeDetails />,
         //     showHeader: false
