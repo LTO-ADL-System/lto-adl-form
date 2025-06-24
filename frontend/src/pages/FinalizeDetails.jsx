@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import useSessionState from "../hooks/useSessionState";
+import { AppointmentModal } from "../components/AppointmentModal";
 
 // Import all icons
 import person from "../assets/person.svg";
@@ -34,6 +35,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
+    const [showAppointmentModal, setShowAppointmentModal] = useState(false);
 
     // Icon mapping for dynamic imports
     const iconMap = {
@@ -89,10 +91,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
             const success = await submitApplication();
             if (success) {
                 setSubmitSuccess(true);
-                // Optionally redirect after a delay
-                setTimeout(() => {
-                    window.location.href = "/dashboard"; // Adjust based on your routing
-                }, 3000);
+                // Don't auto-redirect, let user choose to schedule appointment or go to dashboard
             } else {
                 alert("Submission failed. Please try again.");
             }
@@ -172,23 +171,35 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                     Personal Information
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {renderReadOnlyField("Last Name", personalData.lastName, true)}
-                    {renderReadOnlyField("First Name", personalData.firstName, true)}
-                    {renderReadOnlyField("Middle Name", personalData.middleName)}
-                    {renderReadOnlyField("Name Extension", personalData.nameExtension)}
+                    {renderReadOnlyField("Last Name", personalData.family_name || personalData.lastName, true)}
+                    {renderReadOnlyField("First Name", personalData.first_name || personalData.firstName, true)}
+                    {renderReadOnlyField("Middle Name", personalData.middle_name || personalData.middleName)}
+                    {renderReadOnlyField("Name Extension", personalData.name_extension || personalData.nameExtension)}
                     {renderReadOnlyField("Sex", personalData.sex, true)}
                     {renderReadOnlyField("Birthdate", personalData.birthdate, true)}
-                    {renderReadOnlyField("Civil Status", personalData.civilStatus, true)}
+                    {renderReadOnlyField("Civil Status", personalData.civil_status || personalData.civilStatus, true)}
                     {renderReadOnlyField("Height (cm)", personalData.height)}
                     {renderReadOnlyField("Weight (kg)", personalData.weight)}
-                    {renderReadOnlyField("Contact Number", personalData.contactNumber, true)}
+                    {renderReadOnlyField("Contact Number", personalData.contact_num || personalData.contactNumber, true)}
                     {renderReadOnlyField("Nationality", personalData.nationality, true)}
-                    {renderReadOnlyField("Highest Educational Attainment", personalData.education, true)}
+                    {renderReadOnlyField("Highest Educational Attainment", personalData.educational_attainment || personalData.education, true)}
                     {renderReadOnlyField("Birthplace", personalData.birthplace, true)}
                     {renderReadOnlyField("TIN", personalData.tin)}
-                    {renderReadOnlyField("Father's Name", personalData.fatherName)}
-                    {renderReadOnlyField("Mother's Name", personalData.motherName)}
-                    {renderReadOnlyField("Spouse's Name", personalData.spouseName)}
+                    {renderReadOnlyField("Father's Name", 
+                        personalData.father_family_name ? 
+                        `${personalData.father_first_name || ''} ${personalData.father_middle_name || ''} ${personalData.father_family_name}`.trim() : 
+                        null
+                    )}
+                    {renderReadOnlyField("Mother's Name", 
+                        personalData.mother_family_name ? 
+                        `${personalData.mother_first_name || ''} ${personalData.mother_middle_name || ''} ${personalData.mother_family_name}`.trim() : 
+                        null
+                    )}
+                    {renderReadOnlyField("Spouse's Name", 
+                        personalData.spouse_family_name ? 
+                        `${personalData.spouse_first_name || ''} ${personalData.spouse_middle_name || ''} ${personalData.spouse_family_name}`.trim() : 
+                        null
+                    )}
                 </div>
             </div>
         );
@@ -200,13 +211,13 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
             <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Address Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {renderReadOnlyField("House No./Unit No./Lot/Bldg.", personalData.houseNumber)}
-                    {renderReadOnlyField("Street/Subdivision/Purok", personalData.street)}
+                    {renderReadOnlyField("House No./Unit No./Lot/Bldg.", personalData.house_address)}
+                    {renderReadOnlyField("Street/Subdivision/Purok", personalData.street_address)}
                     {renderReadOnlyField("Barangay", personalData.barangay)}
-                    {renderReadOnlyField("City/Municipality", personalData.city)}
+                    {renderReadOnlyField("City/Municipality", personalData.municipality)}
                     {renderReadOnlyField("Province", personalData.province)}
                     {renderReadOnlyField("Region", personalData.region)}
-                    {renderReadOnlyField("Zip Code", personalData.zipCode)}
+                    {renderReadOnlyField("Zip Code", personalData.zip_code)}
                 </div>
             </div>
         );
@@ -218,8 +229,8 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
             <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Employment Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderReadOnlyField("Employer's Business Name", personalData.employerName)}
-                    {renderReadOnlyField("Employer's Telephone Number", personalData.employerPhone)}
+                    {renderReadOnlyField("Employer's Business Name", personalData.employerBusinessName)}
+                    {renderReadOnlyField("Employer's Telephone Number", personalData.employerTelephone)}
                     <div className="md:col-span-2">
                         {renderReadOnlyField("Employer's Contact Address", personalData.employerAddress)}
                     </div>
@@ -235,7 +246,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Emergency Contact</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {renderReadOnlyField("Emergency Contact's Name", personalData.emergencyContactName)}
-                    {renderReadOnlyField("Emergency Contact's Telephone Number", personalData.emergencyContactPhone)}
+                    {renderReadOnlyField("Emergency Contact's Telephone Number", personalData.emergencyContactNumber)}
                     <div className="md:col-span-3">
                         {renderCheckboxField("Same with Applicant Address", personalData.sameAsApplicantAddress)}
                     </div>
@@ -291,9 +302,20 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                 {/* Medical Information */}
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">Medical Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {renderMultiSelectField("Organ Donation", licenseData.organs, false, "md:col-span-1")}
-                        {renderMultiSelectField("Medical Conditions", licenseData.conditions, false, "md:col-span-1")}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {renderReadOnlyField("Organ Donor", licenseData.organDonor === 'yes' ? 'Yes' : 'No')}
+                        {renderMultiSelectField("Organs to Donate", 
+                            Array.isArray(licenseData.organs) ? licenseData.organs.join(', ') : licenseData.organs, 
+                            false, "md:col-span-1"
+                        )}
+                        {renderMultiSelectField("Driving Conditions", 
+                            Array.isArray(licenseData.conditions) ? licenseData.conditions.join(', ') : licenseData.conditions, 
+                            false, "md:col-span-1"
+                        )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        {renderReadOnlyField("Blood Type", licenseData.blood_type || licenseData.bloodType)}
+                        {renderReadOnlyField("Driving Skill Acquisition", licenseData.drivingSkill)}
                     </div>
                 </div>
 
@@ -400,7 +422,7 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                     <div className="bg-white p-4 rounded-lg shadow-sm">
                         <span className="font-semibold text-blue-700 block mb-1">Applicant Name:</span>
                         <p className="text-blue-600 font-medium">
-                            {personalData.firstName} {personalData.middleName} {personalData.lastName} {personalData.nameExtension}
+                            {personalData.first_name || personalData.firstName} {personalData.middle_name || personalData.middleName} {personalData.family_name || personalData.lastName} {personalData.name_extension || personalData.nameExtension}
                         </p>
                     </div>
                     <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -542,10 +564,21 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
                         </svg>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Application Submitted Successfully!</h3>
                         <p className="text-gray-600 mb-4">
-                            Your driver's license application has been submitted. You will be redirected to the dashboard shortly.
+                            Your driver's license application has been submitted successfully. You can now schedule an appointment after your application is approved.
                         </p>
-                        <div className="text-sm text-gray-500">
-                            Redirecting in 3 seconds...
+                        <div className="flex gap-3 justify-center">
+                            <button 
+                                onClick={() => setShowAppointmentModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Schedule Appointment
+                            </button>
+                            <button 
+                                onClick={() => window.location.href = "/home"}
+                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Go to Dashboard
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -603,6 +636,12 @@ const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
             {/* Modals */}
             {renderConfirmDialog()}
             {renderSuccessMessage()}
+            
+            {/* Appointment Modal */}
+            <AppointmentModal
+                isOpen={showAppointmentModal}
+                onClose={() => setShowAppointmentModal(false)}
+            />
         </div>
     );
 };

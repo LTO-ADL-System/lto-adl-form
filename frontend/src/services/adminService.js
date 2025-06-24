@@ -181,9 +181,9 @@ class AdminService {
   // Get type color for application type
   getApplicationTypeColor(type) {
     const colors = {
-      'ATID_NEW': 'green',
-      'ATID_REN': 'blue',
-      'ATID_DUP': 'purple'
+      'ATID_A': 'green',
+      'ATID_B': 'blue',
+      'ATID_D': 'purple'
     };
     return colors[type] || 'gray';
   }

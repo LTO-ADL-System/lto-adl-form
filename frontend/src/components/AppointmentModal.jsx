@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAppointments } from '../hooks/useAppointments';
+import appointmentService from '../services/appointmentService';
+import { useApplications } from '../hooks/useApplications';
 
 export const AppointmentModal = ({ isOpen, onClose }) => {
   const [location, setLocation] = useState('');
@@ -7,6 +10,37 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [applicationId, setApplicationId] = useState(null);
+
+  const { scheduleAppointment } = useAppointments(false);
+  const { applications, fetchApplications } = useApplications(false);
+
+  // Get the latest approved application ID
+  useEffect(() => {
+    if (isOpen && !applicationId) {
+      // Only fetch if modal is open and we don't have an application ID
+      fetchApplications().catch(err => {
+        console.error('Error fetching applications:', err);
+        setError('Failed to load applications. Please try again.');
+      });
+    }
+  }, [isOpen, fetchApplications, applicationId]);
+
+  // Separate effect to process applications data
+  useEffect(() => {
+    if (applications && applications.length > 0 && !applicationId) {
+      // Find the latest approved application
+      const approvedApp = applications.find(app => 
+        app.application_status_id === 'ASID_APR' || 
+        app.status?.status_description === 'Approved'
+      );
+      if (approvedApp) {
+        setApplicationId(approvedApp.application_id);
+      }
+    }
+  }, [applications, applicationId]);
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -78,13 +112,51 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
     setSelectedTime(null);
   };
 
-  const handleBookAppointment = () => {
-    if (location && selectedDate && selectedTime) {
-      alert(`Appointment booked!\nLocation: ${location}\nDate: ${months[currentMonth]} ${selectedDate}, ${currentYear}\nTime: ${selectedTime}`);
-      onClose();
-      setLocation('');
-      setSelectedDate(null);
-      setSelectedTime(null);
+  const handleBookAppointment = async () => {
+    if (!location || !selectedDate || !selectedTime || !applicationId) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Validate time format first
+      let formattedTime;
+      try {
+        formattedTime = appointmentService.convertTo24HourFormat(selectedTime);
+      } catch (timeError) {
+        throw new Error(`Invalid time selected: ${timeError.message}`);
+      }
+
+      // Format data for the API
+      const appointmentData = {
+        applicationId: applicationId,
+        locationId: location,
+        appointmentDate: appointmentService.formatDateForAPI(currentYear, currentMonth, selectedDate),
+        appointmentTime: formattedTime
+      };
+
+      console.log('Scheduling appointment with data:', appointmentData);
+
+      const response = await scheduleAppointment(appointmentData);
+      
+      if (response.success) {
+        alert(`Appointment booked successfully!\nDate: ${months[currentMonth]} ${selectedDate}, ${currentYear}\nTime: ${selectedTime}`);
+        handleClose();
+      } else {
+        throw new Error(response.message || 'Failed to book appointment');
+      }
+    } catch (err) {
+      console.error('Error booking appointment:', err);
+      if (err.message.includes('422')) {
+        setError('Invalid appointment data. Please check your selections and try again.');
+      } else {
+        setError(err.message || 'Failed to book appointment. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,6 +165,9 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
     setLocation('');
     setSelectedDate(null);
     setSelectedTime(null);
+    setError(null);
+    setIsSubmitting(false);
+    setApplicationId(null); // Reset application ID to force fresh fetch next time
   };
 
   const calendarDays = generateCalendarDays();
@@ -119,6 +194,26 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
               </button>
             </div>
 
+            {/* Error Display */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Application ID Display */}
+            {applicationId && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg text-sm">
+                Application ID: {applicationId}
+              </div>
+            )}
+
+            {!applicationId && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-600 rounded-lg text-sm">
+                No approved application found. Please ensure you have an approved application before booking an appointment.
+              </div>
+            )}
+
             {/* Location Input */}
             <div className="mb-4">
               <label className="block text-gray-700 font-medium mb-1">Location</label>
@@ -126,11 +221,15 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-gray-500"
+                  disabled={!applicationId}
               >
-                <option value="">Text Hint</option>
-                <option value="Office A">Office A</option>
-                <option value="Office B">Office B</option>
-                <option value="Remote">Remote</option>
+                <option value="">Select Location</option>
+                <option value="LCTID_003">LTO Makati</option>
+                <option value="LCTID_006">LTO Mandaluyong</option>
+                <option value="LCTID_005">LTO Manila West</option>
+                <option value="LCTID_001">LTO Manila East</option>
+                <option value="LCTID_004">LTO Pasig</option>
+                <option value="LCTID_002">LTO Quezon City</option>
               </select>
             </div>
 
@@ -227,20 +326,32 @@ export const AppointmentModal = ({ isOpen, onClose }) => {
             {/* Book Button */}
             <button
                 onClick={handleBookAppointment}
-                disabled={!location || !selectedDate || !selectedTime}
+                disabled={!location || !selectedDate || !selectedTime || !applicationId || isSubmitting}
                 className={`
               w-full py-2 rounded-lg font-semibold text-white transition-colors flex items-center justify-center gap-2
-              ${location && selectedDate && selectedTime
+              ${location && selectedDate && selectedTime && applicationId && !isSubmitting
                     ? 'bg-blue-600 hover:bg-blue-700'
                     : 'bg-gray-400 cursor-not-allowed'
                 }
             `}
             >
-              Book Appointment
-              {location && selectedDate && selectedTime && (
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
+                  Booking...
+                </>
+              ) : (
+                <>
+                  Book Appointment
+                  {location && selectedDate && selectedTime && applicationId && (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                  )}
+                </>
               )}
             </button>
           </div>

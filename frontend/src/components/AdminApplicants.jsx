@@ -66,9 +66,9 @@ export default function AdminApplicants() {
 
     const getDisplayType = useMemo(() => (apiType) => {
         const typeMap = {
-            'ATID_NEW': 'New',
-            'ATID_REN': 'Renewal',
-            'ATID_DUP': 'Duplicate'
+            'ATID_A': 'New',
+            'ATID_B': 'Renewal',
+            'ATID_D': 'Duplicate'
         };
         return typeMap[apiType] || 'New';
     }, []);
@@ -150,7 +150,7 @@ export default function AdminApplicants() {
                             date: new Date().toLocaleDateString('en-CA'),
                             originalData: {
                                 application_id: 'test-1',
-                                application_type_id: 'ATID_NEW',
+                                application_type_id: 'ATID_A',
                                 applicant_name: 'Test Applicant',
                                 application_status_id: 'ASID_PEN',
                                 submission_date: new Date().toISOString(),

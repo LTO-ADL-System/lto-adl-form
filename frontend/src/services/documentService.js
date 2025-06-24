@@ -102,7 +102,7 @@ class DocumentService {
       'DTID_MEDICAL_CERT'
     ];
 
-    if (applicationType === 'ATID_NEW') {
+    if (applicationType === 'ATID_A') {
       baseRequirements.push('DTID_STUDENT_PERMIT');
     }
 

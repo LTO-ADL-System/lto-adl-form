@@ -225,17 +225,37 @@ const LicenseDetails = ({onProceed, onBack}) => {
     // Remove all non-alphanumeric characters
     const cleanValue = value.replace(/[^A-Za-z0-9]/g, '');
 
-    // Format as A##-##-######
+    // Format as A##-##-###### (1 letter + 2 digits + 2 digits + 6 digits = 11 total characters)
+    // With dashes: A##-##-###### = 13 characters including dashes
     let formatted = '';
-    for (let i = 0; i < cleanValue.length && i < 11; i++) { // Changed from 9 to 11
-      if (i === 0) {
-        // First character should be a letter
-        formatted += cleanValue[i].toUpperCase();
-      } else if (i === 3 || i === 5) {
-        // Add dashes after 3rd and 5th characters
-        formatted += '-' + cleanValue[i];
-      } else {
-        formatted += cleanValue[i];
+    
+    if (cleanValue.length > 0) {
+      // First character: letter
+      formatted += cleanValue[0].toUpperCase();
+      
+      // Next 2 characters: first set of digits
+      if (cleanValue.length > 1) {
+        if (cleanValue.length === 2) {
+          formatted += cleanValue[1];
+        } else {
+          formatted += cleanValue.slice(1, 3);
+          formatted += '-';
+          
+          // Next 2 characters: second set of digits
+          if (cleanValue.length > 3) {
+            if (cleanValue.length === 4) {
+              formatted += cleanValue[3];
+            } else {
+              formatted += cleanValue.slice(3, 5);
+              formatted += '-';
+              
+              // Last 6 characters: final set of digits
+              if (cleanValue.length > 5) {
+                formatted += cleanValue.slice(5, 11); // Take up to 6 digits
+              }
+            }
+          }
+        }
       }
     }
 
@@ -415,7 +435,7 @@ const LicenseDetails = ({onProceed, onBack}) => {
                     handleInputChange(field.name, value);
                   }}
                   disabled={isLicenseDisabled}
-                  maxLength={isLicenseField ? 12 : undefined} // Changed from 10 to 12 to accommodate A##-##-######
+                  maxLength={isLicenseField ? 13 : undefined} // A##-##-###### = 13 characters including dashes
               />
             </div>
         ); }
