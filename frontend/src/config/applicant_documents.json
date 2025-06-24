@@ -1,0 +1,67 @@
+{
+  "sections": [
+    {
+      "categories": [
+        {
+          "title": "General Requirements",
+          "fields": [
+            {
+              "name": "validID",
+              "label": "Valid ID",
+              "type": "file",
+              "required": true,
+              "acceptedFormats": [".pdf", ".jpg", ".jpeg", ".png"],
+              "maxSize": "5MB",
+              "description": "Government-issued valid ID (Driver's License, Passport, UMID, etc.)"
+            },
+            {
+              "name": "medicalCertificate",
+              "label": "Medical Certificate",
+              "type": "file",
+              "required": true,
+              "acceptedFormats": [".pdf", ".jpg", ".jpeg", ".png"],
+              "maxSize": "5MB",
+              "description": "Medical certificate from an LTO-accredited clinic"
+            }
+          ]
+        },
+        {
+          "title": "Specific Requirements",
+          "fields": [
+            {
+              "name": "pdcCertificate",
+              "label": "PDC Certificate",
+              "type": "file",
+              "required": true,
+              "acceptedFormats": [".pdf", ".jpg", ".jpeg", ".png"],
+              "maxSize": "5MB",
+              "description": "Professional Driver Course certificate from an accredited driving school"
+            },
+            {
+              "name": "studentDriversPermit",
+              "label": "Valid Student Driver's Permit",
+              "type": "file",
+              "required": true,
+              "acceptedFormats": [".pdf", ".jpg", ".jpeg", ".png"],
+              "maxSize": "5MB",
+              "description": "Current and valid Student Driver's Permit"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fileValidation": {
+    "maxFileSize": 5242880,
+    "allowedTypes": ["image/jpeg", "image/jpg", "image/png", "application/pdf"],
+    "allowedExtensions": [".pdf", ".jpg", ".jpeg", ".png"]
+  },
+  "messages": {
+    "noFileSelected": "No file selected",
+    "fileSelected": "File selected: {fileName}",
+    "fileSizeError": "File size must be less than {maxSize}",
+    "fileTypeError": "Only {allowedTypes} files are allowed",
+    "uploadSuccess": "File uploaded successfully",
+    "uploadError": "Failed to upload file. Please try again."
+  }
+}

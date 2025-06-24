@@ -10,34 +10,34 @@ import FinalizeDetails from '../pages/FinalizeDetails.jsx';
 
 const Application = () => {
     const [currentComponent, setCurrentComponent] = useState('one');
-    
+
     const onStartApplication = (componentName) => {
         setCurrentComponent(componentName);
     };
-    
+
     const switchToTwo = () => {
         setCurrentComponent('two');
     }
-    
+
     // Define the step flow
     const steps = {
-        'one': { 
+        'one': {
             component: <InitialApplication onStartApplication={switchToTwo} />,
             showHeader: true
         },
-        'two': { 
+        'two': {
             component: <ApplicationType onBack={() => setCurrentComponent('one')} onProceed={() => setCurrentComponent('three')} />,
             showHeader: true
         },
-        'three': { 
+        'three': {
             component: <PersonalDetails onProceed={() => setCurrentComponent('four')} onBack={() => setCurrentComponent('two')} />,
             showHeader: false
         },
-        'four': { 
+        'four': {
             component: <LicenseDetails onProceed={() => setCurrentComponent('five')} onBack={() => setCurrentComponent('three')} />,
             showHeader: false
         },
-        'five': { 
+        'five': {
             component: <ApplicationDocuments onProceed={() => setCurrentComponent('six')} onBack={() => setCurrentComponent('four')} />,
             showHeader: false
         },
@@ -49,7 +49,7 @@ const Application = () => {
 
     // Get current step or fallback to initial
     const currentStep = steps[currentComponent] || steps['one'];
-    
+
     return (
         <div className="h-screen flex flex-col">
             <div className="h-16 flex-shrink-0"></div>

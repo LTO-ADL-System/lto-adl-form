@@ -138,7 +138,8 @@
           "type": "text",
           "placeholder": "eg. Dela Cruz",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
         },
         {
           "name": "father_first_name",
@@ -146,7 +147,8 @@
           "type": "text",
           "placeholder": "eg. Juan",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
         },
         {
           "name": "father_middle_name",
@@ -154,7 +156,15 @@
           "type": "text",
           "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
+        },
+        {
+          "name": "father_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
         }
       ]
     },
@@ -167,7 +177,8 @@
           "type": "text",
           "placeholder": "eg. Dela Cruz",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
         },
         {
           "name": "mother_first_name",
@@ -175,7 +186,8 @@
           "type": "text",
           "placeholder": "eg. Juan",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
         },
         {
           "name": "mother_middle_name",
@@ -183,7 +195,15 @@
           "type": "text",
           "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
+        },
+        {
+          "name": "mother_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
         }
       ]
     },
@@ -196,7 +216,8 @@
           "type": "text",
           "placeholder": "eg. Dela Cruz",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
         },
         {
           "name": "spouse_first_name",
@@ -204,7 +225,8 @@
           "type": "text",
           "placeholder": "eg. Juan",
           "required": true,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
         },
         {
           "name": "spouse_middle_name",
@@ -212,7 +234,15 @@
           "type": "text",
           "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 1
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
+        },
+        {
+          "name": "spouse_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
         }
       ]
     },

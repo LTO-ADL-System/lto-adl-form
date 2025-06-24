@@ -1,9 +1,9 @@
 // frontend/src/pages/LicenseDetails.jsx
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import config from "../config/license_details.json";
 
-// Import all icons - you can optimize this by creating an icon mapping
+// import all icons
 import person from "../assets/person.svg";
 import document from "../assets/documents.svg";
 import finalize from "../assets/finalize.svg";
@@ -18,12 +18,12 @@ import D from "../assets/license_details/D.svg";
 import BE from "../assets/license_details/BE.svg";
 import CE from "../assets/license_details/CE.svg";
 
-const LicenseDetails = ({onProceed}) => {
+const LicenseDetails = ({onProceed, onBack}) => {
   const [formData, setFormData] = useState({});
-  const [selectedVehicleCategories, setSelectedVehicleCategories] = useState(['A']);
+  const [selectedVehicleCategories, setSelectedVehicleCategories] = useState(['']);
   const [dropdownOpen, setDropdownOpen] = useState({}); // Track which dropdowns are open
 
-  // Icon mapping for dynamic imports
+  // icon mapping for dynamic imports
   const iconMap = {
     person,
     document,
@@ -48,16 +48,25 @@ const LicenseDetails = ({onProceed}) => {
   };
 
   const handleVehicleCategorySelect = (categoryId) => {
+    // don't allow selection if category is disabled
+    if (isVehicleCategoryDisabled(categoryId)) {
+      return;
+    }
+
     setSelectedVehicleCategories(prev => {
+      let newCategories;
       if (prev.includes(categoryId)) {
-        // Remove if already selected
-        return prev.filter(id => id !== categoryId);
+        // remove if already selected
+        newCategories = prev.filter(id => id !== categoryId);
       } else {
-        // Add if not selected
-        return [...prev, categoryId];
+        // add if not selected
+        newCategories = [...prev, categoryId];
       }
+
+      // update form data
+      handleInputChange('vehicleCategories', newCategories);
+      return newCategories;
     });
-    handleInputChange('vehicleCategories', selectedVehicleCategories);
   };
 
   const handleMultiSelectChange = (fieldName, value, isAllOption = false) => {
@@ -121,6 +130,14 @@ const LicenseDetails = ({onProceed}) => {
     }
 
     return formatted;
+  };
+
+  const isVehicleCategoryDisabled = (categoryId) => {
+    // If newApplication is checked, only allow A, A1, and B categories
+    if (formData.newApplication === true) {
+      return !['A', 'A1', 'B'].includes(categoryId);
+    }
+    return false;
   };
 
   const isFieldDisabled = (field) => {
@@ -267,7 +284,7 @@ const LicenseDetails = ({onProceed}) => {
         );
 
       case 'text':
-        const isLicenseField = field.name === 'driverLicenseNumber';
+      { const isLicenseField = field.name === 'driverLicenseNumber';
         const isLicenseDisabled = isLicenseField ? isLicenseNumberDisabled() : false;
 
         return (
@@ -291,7 +308,7 @@ const LicenseDetails = ({onProceed}) => {
                   maxLength={isLicenseField ? 12 : undefined} // Changed from 10 to 12 to accommodate A##-##-######
               />
             </div>
-        );
+        ); }
 
       case 'checkbox':
         return (
@@ -337,22 +354,45 @@ const LicenseDetails = ({onProceed}) => {
         <h2 className="text-xl font-semibold text-gray-600 mb-6">
           {config.vehicleCategorySection.title} (Multi-select)
         </h2>
+
+        {/* Show notification when new application is selected */}
+        {formData.newApplication === true && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                <strong>New Applicant:</strong> Only vehicle categories A, A1, and B are available for new applications.
+              </p>
+            </div>
+        )}
+
         <div className={`grid ${config.vehicleCategorySection.gridClass} gap-4`}>
           {config.vehicleCategories.map((category) => {
             const isSelected = selectedVehicleCategories.includes(category.id);
+            const isDisabled = isVehicleCategoryDisabled(category.id);
+
             return (
                 <div
                     key={category.id}
-                    className={`relative flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition-all duration-200 ${
-                        isSelected
-                            ? 'bg-[#F0F4FC] border-[#0433A9] shadow-md transform scale-105'
-                            : 'bg-white border-gray-200 hover:shadow-sm'
+                    className={`relative flex flex-col items-center p-4 border-2 rounded-lg transition-all duration-200 ${
+                        isDisabled
+                            ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                            : `cursor-pointer hover:border-blue-500 ${
+                                isSelected
+                                    ? 'bg-[#F0F4FC] border-[#0433A9] shadow-md transform scale-105'
+                                    : 'bg-white border-gray-200 hover:shadow-sm'
+                            }`
                     }`}
-                    onClick={() => handleVehicleCategorySelect(category.id)}
+                    onClick={() => !isDisabled && handleVehicleCategorySelect(category.id)}
                 >
                   {/* Selection indicator */}
-                  {isSelected && (
+                  {isSelected && !isDisabled && (
                       <div className="absolute inset-0 border-2 border-[#0433A9] rounded-lg pointer-events-none"></div>
+                  )}
+
+                  {/* Disabled overlay */}
+                  {isDisabled && (
+                      <div className="absolute inset-0 bg-gray-200 bg-opacity-50 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-500 text-xs font-medium">Not Available</span>
+                      </div>
                   )}
 
                   <div className="flex flex-col items-center justify-center h-full">
@@ -360,13 +400,15 @@ const LicenseDetails = ({onProceed}) => {
                         src={iconMap[category.icon]}
                         alt={category.alt}
                         className={`w-25 h-20 transition-all duration-200 ${
-                            isSelected ? 'scale-110' : ''
-                        }`}
+                            isSelected && !isDisabled ? 'scale-110' : ''
+                        } ${isDisabled ? 'grayscale' : ''}`}
                     />
                     <span className={`text-sm font-medium ${
-                        isSelected
-                            ? 'text-[#0433A9] font-semibold'
-                            : 'text-gray-700'
+                        isDisabled
+                            ? 'text-gray-400'
+                            : isSelected
+                                ? 'text-[#0433A9] font-semibold'
+                                : 'text-gray-700'
                     }`}>
                 {category.id}
               </span>
@@ -386,6 +428,21 @@ const LicenseDetails = ({onProceed}) => {
         )}
       </div>
   );
+
+  useEffect(() => {
+    if (formData.newApplication === true) {
+      // Filter out any selected categories that are not allowed for new applications
+      const allowedCategories = ['A', 'A1', 'B'];
+      const filteredCategories = selectedVehicleCategories.filter(categoryId =>
+          allowedCategories.includes(categoryId)
+      );
+
+      if (filteredCategories.length !== selectedVehicleCategories.length) {
+        setSelectedVehicleCategories(filteredCategories);
+        handleInputChange('vehicleCategories', filteredCategories);
+      }
+    }
+  }, [formData.newApplication]);
 
   const renderStepNavigation = () => (
       <div className="flex justify-center mb-8">
@@ -407,23 +464,38 @@ const LicenseDetails = ({onProceed}) => {
   );
 
   const renderNavigationButtons = () => (
-     <div className="flex justify-between items-center mt-auto pt-6">
-      {config.navigation.buttons.map((button, index) => {
-        if (button.text === "Proceed") {
-          return (
-            <button key={index} onClick={onProceed} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
-              Proceed 
-            </button>
-          );
-        }
+      <div className="flex items-center justify-between mt-auto pt-6">
+        {/* Left - Back button */}
+        <div>
+          {onBack && (
+              <button
+                  className="px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                  onClick={onBack}
+              >
+                Back
+              </button>
+          )}
+        </div>
 
-        return (
-          <button key={index} className={button.className}>
-            {button.text}
+        {/* Right - Save & Proceed buttons */}
+        <div className="flex gap-4">
+          <button
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                // Add save functionality here if needed
+                console.log('Save & Exit clicked');
+              }}
+          >
+            Save & Exit
           </button>
-        );
-      })}
-    </div>
+          <button
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              onClick={onProceed}
+          >
+            Proceed
+          </button>
+        </div>
+      </div>
   );
 
   return (

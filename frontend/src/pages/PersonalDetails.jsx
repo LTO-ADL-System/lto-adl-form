@@ -43,7 +43,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
         // Mapping of region names to their numbers
         const regionNumbers = {
             'ILOCOS REGION': 'I',
-            'CAGAYAN VALLEY': 'II', 
+            'CAGAYAN VALLEY': 'II',
             'CENTRAL LUZON': 'III',
             'CALABARZON': 'IV-A',
             'MIMAROPA': 'IV-B',
@@ -66,7 +66,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
         if (regionNumber) {
             return `${regionNumber} - ${regionName}`;
         }
-        
+
         // Fallback for any regions not in the mapping
         return regionName;
     };
@@ -74,28 +74,28 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const fetchRegions = async () => {
         setLoading(prev => ({ ...prev, regions: true }));
         setErrors(prev => ({ ...prev, regions: null }));
-        
+
         try {
             const response = await fetch(`${PSGC_API_BASE}/regions`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch regions: ${response.status}`);
             }
             const data = await response.json();
-            
+
             const regionOptions = data.map(region => ({
                 value: region.code,
                 label: formatRegionName(region.name)
             }));
-            
+
             setDynamicOptions(prev => ({
                 ...prev,
                 region: regionOptions
             }));
         } catch (error) {
             console.error('Error fetching regions:', error);
-            setErrors(prev => ({ 
-                ...prev, 
-                regions: 'Failed to load regions. Please try again.' 
+            setErrors(prev => ({
+                ...prev,
+                regions: 'Failed to load regions. Please try again.'
             }));
         } finally {
             setLoading(prev => ({ ...prev, regions: false }));
@@ -105,19 +105,19 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const fetchProvinces = async (regionCode) => {
         setLoading(prev => ({ ...prev, provinces: true }));
         setErrors(prev => ({ ...prev, provinces: null }));
-        
+
         try {
             const response = await fetch(`${PSGC_API_BASE}/regions/${regionCode}/provinces`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch provinces: ${response.status}`);
             }
             const data = await response.json();
-            
+
             const provinceOptions = data.map(province => ({
                 value: province.code,
                 label: province.name
             }));
-            
+
             setDynamicOptions(prev => ({
                 ...prev,
                 province: provinceOptions,
@@ -126,9 +126,9 @@ const PersonalDetails = ({onProceed, onBack }) => {
             }));
         } catch (error) {
             console.error('Error fetching provinces:', error);
-            setErrors(prev => ({ 
-                ...prev, 
-                provinces: 'Failed to load provinces. Please try again.' 
+            setErrors(prev => ({
+                ...prev,
+                provinces: 'Failed to load provinces. Please try again.'
             }));
         } finally {
             setLoading(prev => ({ ...prev, provinces: false }));
@@ -138,19 +138,19 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const fetchMunicipalities = async (provinceCode) => {
         setLoading(prev => ({ ...prev, municipalities: true }));
         setErrors(prev => ({ ...prev, municipalities: null }));
-        
+
         try {
             const response = await fetch(`${PSGC_API_BASE}/provinces/${provinceCode}/cities-municipalities`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch municipalities: ${response.status}`);
             }
             const data = await response.json();
-            
+
             const municipalityOptions = data.map(municipality => ({
                 value: municipality.code,
                 label: municipality.name
             }));
-            
+
             setDynamicOptions(prev => ({
                 ...prev,
                 municipality: municipalityOptions,
@@ -158,9 +158,9 @@ const PersonalDetails = ({onProceed, onBack }) => {
             }));
         } catch (error) {
             console.error('Error fetching municipalities:', error);
-            setErrors(prev => ({ 
-                ...prev, 
-                municipalities: 'Failed to load municipalities. Please try again.' 
+            setErrors(prev => ({
+                ...prev,
+                municipalities: 'Failed to load municipalities. Please try again.'
             }));
         } finally {
             setLoading(prev => ({ ...prev, municipalities: false }));
@@ -170,28 +170,28 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const fetchBarangays = async (municipalityCode) => {
         setLoading(prev => ({ ...prev, barangays: true }));
         setErrors(prev => ({ ...prev, barangays: null }));
-        
+
         try {
             const response = await fetch(`${PSGC_API_BASE}/cities-municipalities/${municipalityCode}/barangays`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch barangays: ${response.status}`);
             }
             const data = await response.json();
-            
+
             const barangayOptions = data.map(barangay => ({
                 value: barangay.code,
                 label: barangay.name
             }));
-            
+
             setDynamicOptions(prev => ({
                 ...prev,
                 barangay: barangayOptions
             }));
         } catch (error) {
             console.error('Error fetching barangays:', error);
-            setErrors(prev => ({ 
-                ...prev, 
-                barangays: 'Failed to load barangays. Please try again.' 
+            setErrors(prev => ({
+                ...prev,
+                barangays: 'Failed to load barangays. Please try again.'
             }));
         } finally {
             setLoading(prev => ({ ...prev, barangays: false }));
@@ -243,6 +243,21 @@ const PersonalDetails = ({onProceed, onBack }) => {
             handleProvinceChange(value);
         } else if (fieldName === 'municipality') {
             handleMunicipalityChange(value);
+        }
+
+        // Handle deceased checkbox changes - clear related fields when checked
+        if (fieldName.endsWith('_deceased') && value === true) {
+            const prefix = fieldName.replace('_deceased', '');
+            const fieldsToUpdateKeys = Object.keys(formData).filter(key =>
+                key.startsWith(prefix) && key !== fieldName
+            );
+
+            const updatedFormData = { ...formData, [fieldName]: value };
+            fieldsToUpdateKeys.forEach(key => {
+                updatedFormData[key] = '';
+            });
+
+            setFormData(updatedFormData);
         }
     };
 
@@ -313,16 +328,16 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const getFieldOptions = (field) => {
         // Check if this is a location field that should use PSGC API data
         const locationFields = ['region', 'province', 'municipality', 'barangay'];
-        
+
         if (locationFields.includes(field.name)) {
             return dynamicOptions[field.name] || [];
         }
-        
+
         // For non-location dependent fields, use dynamic options if available
         if (field.dependsOn) {
             return dynamicOptions[field.name] || [];
         }
-        
+
         // Regular field, use static options
         return field.options || [];
     };
@@ -350,7 +365,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
     const renderField = (field) => {
         const { name, label, type, placeholder, required, conditionalField, step, rows } = field;
 
-        // handle conditional fields (like emergency contact address fields)
+        // handle conditional fields (like emergency contact address fields and deceased checkboxes)
         const isConditionallyDisabled = conditionalField && formData[conditionalField];
 
         const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -362,6 +377,17 @@ const PersonalDetails = ({onProceed, onBack }) => {
             </label>
         );
 
+        //updated placeholder text for deceased fields
+        const getPlaceholderText = () => {
+            if (isConditionallyDisabled) {
+                if (conditionalField && conditionalField.endsWith('_deceased')) {
+                    return 'Person is deceased';
+                }
+                return 'Same as applicant address';
+            }
+            return placeholder;
+        };
+
         switch (type) {
             case 'text':
             case 'tel':
@@ -372,11 +398,11 @@ const PersonalDetails = ({onProceed, onBack }) => {
                         <input
                             type={type}
                             name={name}
-                            placeholder={placeholder}
+                            placeholder={getPlaceholderText()}
                             className={`${baseClasses} text-gray-500 ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, e.target.value)}
-                            required={required}
+                            required={required && !isConditionallyDisabled}
                             disabled={isConditionallyDisabled}
                         />
                     </div>
@@ -389,11 +415,11 @@ const PersonalDetails = ({onProceed, onBack }) => {
                         <input
                             type="number"
                             name={name}
-                            placeholder={placeholder}
+                            placeholder={getPlaceholderText()}
                             className={`${baseClasses} ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, parseFloat(e.target.value) || '')}
-                            required={required}
+                            required={required && !isConditionallyDisabled}
                             step={step || "1"}
                             disabled={isConditionallyDisabled}
                         />
@@ -406,11 +432,11 @@ const PersonalDetails = ({onProceed, onBack }) => {
                         {labelElement}
                         <textarea
                             name={name}
-                            placeholder={placeholder}
+                            placeholder={getPlaceholderText()}
                             className={`${baseClasses} ${isConditionallyDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, e.target.value)}
-                            required={required}
+                            required={required && !isConditionallyDisabled}
                             rows={rows || 3}
                             disabled={isConditionallyDisabled}
                         />
@@ -418,14 +444,14 @@ const PersonalDetails = ({onProceed, onBack }) => {
                 );
 
             case 'select':
-                { const options = getFieldOptions(field);
+            { const options = getFieldOptions(field);
                 const fieldLoading = isFieldLoading(field.name);
                 const fieldError = getFieldError(field.name);
-                
+
                 // Check if field should be disabled
                 const locationFields = ['region', 'province', 'municipality', 'barangay'];
                 let isDisabled = isConditionallyDisabled || fieldLoading;
-                
+
                 if (locationFields.includes(field.name)) {
                     // For location fields, check dependencies
                     if (field.name === 'province' && !formData.region) isDisabled = true;
@@ -438,7 +464,11 @@ const PersonalDetails = ({onProceed, onBack }) => {
                 // Determine placeholder text
                 let placeholderText = placeholder;
                 if (isConditionallyDisabled) {
-                    placeholderText = 'Same as applicant address';
+                    if (conditionalField && conditionalField.endsWith('_deceased')) {
+                        placeholderText = 'Person is deceased';
+                    } else {
+                        placeholderText = 'Same as applicant address';
+                    }
                 } else if (fieldLoading) {
                     placeholderText = 'Loading...';
                 } else if (fieldError) {
@@ -448,7 +478,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
                 } else if (locationFields.includes(field.name)) {
                     const dependencyMap = {
                         province: 'region',
-                        municipality: 'province', 
+                        municipality: 'province',
                         barangay: 'municipality'
                     };
                     const dependency = dependencyMap[field.name];
@@ -465,7 +495,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
                             className={`${baseClasses} ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''} text-gray-500`}
                             value={formData[name] || ''}
                             onChange={(e) => handleInputChange(name, e.target.value)}
-                            required={required}
+                            required={required && !isConditionallyDisabled}
                             disabled={isDisabled}
                         >
                             <option value="" disabled>
@@ -522,14 +552,26 @@ const PersonalDetails = ({onProceed, onBack }) => {
     };
 
     const renderSection = (section) => {
-        const fieldGroups = groupFieldsByGrid(section.fields);
+        // separate 'deceased' checkbox field if it exists
+        const deceasedField = section.fields.find(f => f.name.endsWith('_deceased'));
+        const otherFields = section.fields.filter(f => f !== deceasedField);
+
+        const fieldGroups = groupFieldsByGrid(otherFields);
         const gridRows = Object.keys(fieldGroups).sort((a, b) => parseInt(a) - parseInt(b));
 
         return (
             <div key={section.title} className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                    {section.title}
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        {section.title}
+                    </h2>
+
+                    {deceasedField && (
+                        <div className="ml-4">
+                            {renderField(deceasedField)}
+                        </div>
+                    )}
+                </div>
 
                 {gridRows.map(gridRow => (
                     <div key={gridRow} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -539,6 +581,7 @@ const PersonalDetails = ({onProceed, onBack }) => {
             </div>
         );
     };
+
 
     return (
         <div>
