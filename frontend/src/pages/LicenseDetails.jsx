@@ -2,6 +2,7 @@
 
 import React, {useEffect, useState} from "react";
 import config from "../config/license_details.json";
+import useSessionState from "../hooks/useSessionState";
 
 // import all icons
 import person from "../assets/person.svg";
@@ -19,9 +20,19 @@ import BE from "../assets/license_details/BE.svg";
 import CE from "../assets/license_details/CE.svg";
 
 const LicenseDetails = ({onProceed, onBack}) => {
+  const {
+    applicationData,
+    isLoading,
+    saveStatus,
+    saveLicenseDetails,
+    updateCurrentStep,
+    getLastSavedTime
+  } = useSessionState();
+
   const [formData, setFormData] = useState({});
   const [selectedVehicleCategories, setSelectedVehicleCategories] = useState(['']);
   const [dropdownOpen, setDropdownOpen] = useState({}); // Track which dropdowns are open
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // icon mapping for dynamic imports
   const iconMap = {
@@ -38,6 +49,105 @@ const LicenseDetails = ({onProceed, onBack}) => {
     D,
     BE,
     CE
+  };
+
+  // Load saved data on component mount
+  useEffect(() => {
+    if (!isLoading && applicationData.licenseDetails) {
+      const savedData = applicationData.licenseDetails;
+      setFormData(savedData);
+
+      // Set vehicle categories if they exist
+      if (savedData.vehicleCategories && Array.isArray(savedData.vehicleCategories)) {
+        setSelectedVehicleCategories(savedData.vehicleCategories);
+      }
+    }
+  }, [isLoading, applicationData.licenseDetails]);
+
+  // Update current step when component mounts
+  useEffect(() => {
+    updateCurrentStep(2);
+  }, [updateCurrentStep]);
+
+  // Auto-save when form data changes
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      setHasUnsavedChanges(true);
+
+      // Debounced auto-save
+      const timeoutId = setTimeout(() => {
+        handleSave();
+      }, 2000); // Auto-save after 2 seconds of inactivity
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, selectedVehicleCategories]);
+
+  // Handle save functionality
+  const handleSave = () => {
+    const dataToSave = {
+      ...formData,
+      vehicleCategories: selectedVehicleCategories.filter(cat => cat !== '')
+    };
+
+    const success = saveLicenseDetails(dataToSave, 2);
+    if (success) {
+      setHasUnsavedChanges(false);
+    }
+  };
+
+  // Handle save and exit
+  const handleSaveAndExit = () => {
+    const dataToSave = {
+      ...formData,
+      vehicleCategories: selectedVehicleCategories.filter(cat => cat !== '')
+    };
+
+    const success = saveLicenseDetails(dataToSave, 2);
+    if (success) {
+      // You can redirect to a dashboard or exit page here
+      alert('Data saved successfully! You can return to complete your application later.');
+      // window.location.href = '/dashboard'; // Uncomment if you have a dashboard
+    }
+  };
+
+  // Handle proceed with validation
+  const handleProceed = () => {
+    // Validate required fields
+    const requiredFields = [];
+
+    config.formSections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.required && !isFieldDisabled(field)) {
+          if (!formData[field.name] ||
+              (Array.isArray(formData[field.name]) && formData[field.name].length === 0)) {
+            requiredFields.push(field.label);
+          }
+        }
+      });
+    });
+
+    // Check if at least one vehicle category is selected
+    const validCategories = selectedVehicleCategories.filter(cat => cat !== '');
+    if (validCategories.length === 0) {
+      requiredFields.push('Vehicle Categories');
+    }
+
+    if (requiredFields.length > 0) {
+      alert(`Please fill in the following required fields:\n${requiredFields.join('\n')}`);
+      return;
+    }
+
+    // Save data before proceeding
+    const dataToSave = {
+      ...formData,
+      vehicleCategories: validCategories
+    };
+
+    const success = saveLicenseDetails(dataToSave, 2);
+    if (success && onProceed) {
+      onProceed();
+    }
   };
 
   const handleInputChange = (fieldName, value) => {
@@ -422,7 +532,7 @@ const LicenseDetails = ({onProceed, onBack}) => {
         {selectedVehicleCategories.length > 0 && (
             <div className="mt-4 p-3 bg-blue-50 rounded-md">
         <span className="text-sm font-medium text-blue-800">
-          Selected Categories: {selectedVehicleCategories.join(', ')}
+          Selected Categories: {selectedVehicleCategories.filter(cat => cat !== '').join(', ')}
         </span>
             </div>
         )}
@@ -449,19 +559,78 @@ const LicenseDetails = ({onProceed, onBack}) => {
         <div className="flex items-center space-x-4 sm:space-x-8 gap-4">
           {config.steps.map((step) => (
               <div key={step.name} className="flex flex-col items-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-2">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
+                    step.index === 1 ? 'bg-blue-600' :
+                        step.index < 1 ? 'bg-green-600' : 'bg-gray-300'
+                }`}>
                   <img src={iconMap[step.icon]} alt="" width={30} height={30} />
                 </div>
-                <span className="text-blue-600 font-medium text-sm">
+                <span className={`font-medium text-sm ${
+                    step.index === 1 ? 'text-blue-600' :
+                        step.index < 1 ? 'text-green-600' : 'text-gray-400'
+                }`}>
               {step.name}
             </span>
-                <div className="w-25 h-1 bg-blue-600 mt-2"></div>
+                <div className={`w-25 h-1 mt-2 ${
+                    step.index === 1 ? 'bg-blue-600' :
+                        step.index < 1 ? 'bg-green-600' : 'bg-gray-300'
+                }`}></div>
                 <span className="text-gray-400 text-xs mt-1">Step {step.index + 1}</span>
               </div>
           ))}
         </div>
       </div>
   );
+
+  // Save status indicator
+  const renderSaveStatus = () => {
+    const lastSavedTime = getLastSavedTime();
+
+    return (
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {saveStatus === 'saving' && (
+                <div className="flex items-center text-blue-600">
+                  <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-sm">Saving...</span>
+                </div>
+            )}
+            {saveStatus === 'saved' && (
+                <div className="flex items-center text-green-600">
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm">Saved</span>
+                </div>
+            )}
+            {saveStatus === 'error' && (
+                <div className="flex items-center text-red-600">
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm">Save failed</span>
+                </div>
+            )}
+            {hasUnsavedChanges && saveStatus === 'idle' && (
+                <div className="flex items-center text-yellow-600">
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm">Unsaved changes</span>
+                </div>
+            )}
+          </div>
+          {lastSavedTime && (
+              <span className="text-sm text-gray-500">
+            Last saved: {lastSavedTime}
+          </span>
+          )}
+        </div>
+    );
+  };
 
   const renderNavigationButtons = () => (
       <div className="flex items-center justify-between mt-auto pt-6">
@@ -480,23 +649,30 @@ const LicenseDetails = ({onProceed, onBack}) => {
         {/* Right - Save & Proceed buttons */}
         <div className="flex gap-4">
           <button
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              onClick={() => {
-                // Add save functionality here if needed
-                console.log('Save & Exit clicked');
-              }}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              onClick={handleSaveAndExit}
+              disabled={saveStatus === 'saving'}
           >
             Save & Exit
           </button>
           <button
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              onClick={onProceed}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              onClick={handleProceed}
+              disabled={saveStatus === 'saving'}
           >
             Proceed
           </button>
         </div>
       </div>
   );
+
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+    );
+  }
 
   return (
       <div>
@@ -511,6 +687,9 @@ const LicenseDetails = ({onProceed, onBack}) => {
                   License Details
                 </h1>
               </div>
+
+              {/* Save status indicator */}
+              {renderSaveStatus()}
 
               <div className="flex-1 flex flex-col">
                 {config.formSections.map(renderSection)}

@@ -1,350 +1,608 @@
 // frontend/src/pages/FinalizeDetails.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import useSessionState from "../hooks/useSessionState";
+
+// Import all icons
 import person from "../assets/person.svg";
 import license from "../assets/license-details.svg";
 import document from "../assets/documents.svg";
 import finalize from "../assets/finalize.svg";
-import personalDetailsConfig from "../config/personal_details.json";
-// import licenseDetailsConfig from "../config/license_details.json";
-// import applicantDocumentsConfig from "../config/applicant_documents.json";
+import car from "../assets/car.png";
+import BlueDocu from "../assets/blue-docu.svg";
+import A from "../assets/license_details/A.svg";
+import A1 from "../assets/license_details/A1.svg";
+import B from "../assets/license_details/B.svg";
+import B1 from "../assets/license_details/B1.svg";
+import B2 from "../assets/license_details/B2.svg";
+import C from "../assets/license_details/C.svg";
+import D from "../assets/license_details/D.svg";
+import BE from "../assets/license_details/BE.svg";
+import CE from "../assets/license_details/CE.svg";
 
-const FinalizeDetails = ({ onProceed, onBack, onEdit }) => {
-    const [allFormData, setAllFormData] = useState({
-        personalDetails: {},
-        licenseDetails: {},
-        applicantDocuments: {}
-    });
+const FinalizeDetails = ({ onBack, onNavigateToStep }) => {
+    const {
+        applicationData,
+        isLoading,
+        saveStatus,
+        submitApplication,
+        getLastSavedTime,
+        isApplicationComplete,
+        APPLICATION_STATUS
+    } = useSessionState();
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
+
+    // Icon mapping for dynamic imports
+    const iconMap = {
+        person,
+        license,
+        document,
+        finalize,
+        car,
+        A,
+        A1,
+        B,
+        B1,
+        B2,
+        C,
+        D,
+        BE,
+        CE
+    };
+
+    // Steps configuration - matching your existing pattern
     const steps = [
-        { name: "Personal", icon: person },
-        { name: "License Details", icon: license },
-        { name: "Documents", icon: document },
-        { name: "Finalize", icon: finalize },
+        { name: "Personal", icon: "person", index: 0 },
+        { name: "License Details", icon: "license", index: 1 },
+        { name: "Documents", icon: "document", index: 2 },
+        { name: "Finalize", icon: "finalize", index: 3 }
     ];
 
-    // Load saved data from localStorage on component mount
-    useEffect(() => {
-        const loadSavedData = () => {
-            try {
-                const personalData = localStorage.getItem('personalDetails');
-                const licenseData = localStorage.getItem('licenseDetails');
-                const documentsData = localStorage.getItem('applicantDocuments');
+    // Check if application is ready for submission
+    const canSubmit = isApplicationComplete();
 
-                setAllFormData({
-                    personalDetails: personalData ? JSON.parse(personalData) : {},
-                    licenseDetails: licenseData ? JSON.parse(licenseData) : {},
-                    applicantDocuments: documentsData ? JSON.parse(documentsData) : {}
-                });
-            } catch (error) {
-                console.error('Error loading saved data:', error);
+    const handleSaveAndExit = () => {
+        // The session state is automatically maintained, so we just need to navigate away
+        // You can add any additional cleanup or navigation logic here
+        if (window.confirm("Your progress has been saved. Do you want to exit the application?")) {
+            // This could navigate to dashboard or home page
+            window.location.href = "/dashboard"; // Adjust based on your routing
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!canSubmit) {
+            alert("Please complete all required sections before submitting.");
+            return;
+        }
+        setShowConfirmDialog(true);
+    };
+
+    const confirmSubmit = async () => {
+        setIsSubmitting(true);
+        setShowConfirmDialog(false);
+
+        try {
+            const success = await submitApplication();
+            if (success) {
+                setSubmitSuccess(true);
+                // Optionally redirect after a delay
+                setTimeout(() => {
+                    window.location.href = "/dashboard"; // Adjust based on your routing
+                }, 3000);
+            } else {
+                alert("Submission failed. Please try again.");
             }
-        };
-
-        loadSavedData();
-    }, []);
-
-    // Helper function to format field values for display
-    const formatFieldValue = (field, value, stepData) => {
-        if (!value && value !== 0 && value !== false) return 'Not provided';
-
-        switch (field.type) {
-            case 'checkbox':
-                return value ? 'Yes' : 'No';
-            case 'date':
-                if (value) {
-                    return new Date(value).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                }
-                return 'Not provided';
-            case 'select':
-                // For location fields, try to get the label from options
-                if (field.options && field.options.length > 0) {
-                    const option = field.options.find(opt => opt.value === value);
-                    return option ? option.label : value;
-                }
-                return value;
-            case 'number':
-                if (field.name.includes('height')) return `${value} cm`;
-                if (field.name.includes('weight')) return `${value} kg`;
-                return value;
-            case 'tel':
-                return value;
-            default:
-                return value;
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert("An error occurred during submission. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    // Helper function to check if a field should be displayed
-    const shouldDisplayField = (field, stepData) => {
-        // Don't display fields that are conditionally disabled and empty
-        if (field.conditionalField && stepData[field.conditionalField]) {
-            return false;
-        }
+    const renderStepNavigation = () => (
+        <div className="flex justify-center mb-8">
+            <div className="flex items-center space-x-4 sm:space-x-8 gap-4">
+                {steps.map((step, index) => (
+                    <div key={step.name} className="flex flex-col items-center">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
+                            index === 3 ? 'bg-blue-600' : 'bg-green-500'
+                        }`}>
+                            <img src={iconMap[step.icon]} alt="" width={30} height={30} />
+                        </div>
+                        <span className={`font-medium text-sm ${
+                            index === 3 ? 'text-blue-600' : 'text-green-500'
+                        }`}>
+                            {step.name}
+                        </span>
+                        <div className={`w-25 h-1 mt-2 ${
+                            index === 3 ? 'bg-blue-600' : 'bg-green-500'
+                        }`}></div>
+                        <span className="text-gray-400 text-xs mt-1">Step {step.index + 1}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 
-        // Don't display empty optional fields for certain types
-        const value = stepData[field.name];
-        if (!field.required && (!value && value !== 0 && value !== false)) {
-            return false;
-        }
+    const renderReadOnlyField = (label, value, isRequired = false, gridClass = "") => (
+        <div className={`mb-4 ${gridClass}`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                {label}
+                {isRequired && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 min-h-[40px] flex items-center">
+                {value || <span className="text-gray-400 italic">Not provided</span>}
+            </div>
+        </div>
+    );
 
-        return true;
+    const renderCheckboxField = (label, checked, gridClass = "") => (
+        <div className={`mb-4 ${gridClass}`}>
+            <div className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-not-allowed"
+                    checked={checked || false}
+                    readOnly
+                    disabled
+                />
+                <label className="ml-2 block text-sm font-medium text-gray-700">
+                    {label}
+                </label>
+            </div>
+        </div>
+    );
+
+    const renderMultiSelectField = (label, values, isRequired = false, gridClass = "") => {
+        const displayValue = Array.isArray(values) ? values.join(', ') : values;
+        return renderReadOnlyField(label, displayValue, isRequired, gridClass);
     };
 
-    // Render a single field
-    const renderField = (field, stepData, stepName) => {
-        if (!shouldDisplayField(field, stepData)) return null;
-
-        const value = stepData[field.name];
-        const formattedValue = formatFieldValue(field, value, stepData);
-
+    const renderPersonalDetails = () => {
+        const personalData = applicationData.personalDetails || {};
         return (
-            <div key={field.name} className="mb-4">
-                <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                        <dt className="text-sm font-medium text-gray-500">
-                            {field.label}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
-                        </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                            {formattedValue}
-                        </dd>
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-[#0433A9] mb-6 flex items-center">
+                    <img src={iconMap.person} alt="Personal Icon" className="w-6 h-6 mr-2" />
+                    Personal Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {renderReadOnlyField("Last Name", personalData.lastName, true)}
+                    {renderReadOnlyField("First Name", personalData.firstName, true)}
+                    {renderReadOnlyField("Middle Name", personalData.middleName)}
+                    {renderReadOnlyField("Name Extension", personalData.nameExtension)}
+                    {renderReadOnlyField("Sex", personalData.sex, true)}
+                    {renderReadOnlyField("Birthdate", personalData.birthdate, true)}
+                    {renderReadOnlyField("Civil Status", personalData.civilStatus, true)}
+                    {renderReadOnlyField("Height (cm)", personalData.height)}
+                    {renderReadOnlyField("Weight (kg)", personalData.weight)}
+                    {renderReadOnlyField("Contact Number", personalData.contactNumber, true)}
+                    {renderReadOnlyField("Nationality", personalData.nationality, true)}
+                    {renderReadOnlyField("Highest Educational Attainment", personalData.education, true)}
+                    {renderReadOnlyField("Birthplace", personalData.birthplace, true)}
+                    {renderReadOnlyField("TIN", personalData.tin)}
+                    {renderReadOnlyField("Father's Name", personalData.fatherName)}
+                    {renderReadOnlyField("Mother's Name", personalData.motherName)}
+                    {renderReadOnlyField("Spouse's Name", personalData.spouseName)}
+                </div>
+            </div>
+        );
+    };
+
+    const renderAddressDetails = () => {
+        const personalData = applicationData.personalDetails || {};
+        return (
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">Address Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {renderReadOnlyField("House No./Unit No./Lot/Bldg.", personalData.houseNumber)}
+                    {renderReadOnlyField("Street/Subdivision/Purok", personalData.street)}
+                    {renderReadOnlyField("Barangay", personalData.barangay)}
+                    {renderReadOnlyField("City/Municipality", personalData.city)}
+                    {renderReadOnlyField("Province", personalData.province)}
+                    {renderReadOnlyField("Region", personalData.region)}
+                    {renderReadOnlyField("Zip Code", personalData.zipCode)}
+                </div>
+            </div>
+        );
+    };
+
+    const renderEmploymentDetails = () => {
+        const personalData = applicationData.personalDetails || {};
+        return (
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">Employment Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {renderReadOnlyField("Employer's Business Name", personalData.employerName)}
+                    {renderReadOnlyField("Employer's Telephone Number", personalData.employerPhone)}
+                    <div className="md:col-span-2">
+                        {renderReadOnlyField("Employer's Contact Address", personalData.employerAddress)}
                     </div>
                 </div>
             </div>
         );
     };
 
-    // Render a section
-    const renderSection = (section, stepData, stepName) => {
-        const hasVisibleFields = section.fields.some(field => shouldDisplayField(field, stepData));
-
-        if (!hasVisibleFields) return null;
-
+    const renderEmergencyContact = () => {
+        const personalData = applicationData.personalDetails || {};
         return (
-            <div key={section.title} className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-                    {section.title}
-                </h3>
-                <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.fields.map(field => renderField(field, stepData, stepName))}
-                </dl>
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">Emergency Contact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {renderReadOnlyField("Emergency Contact's Name", personalData.emergencyContactName)}
+                    {renderReadOnlyField("Emergency Contact's Telephone Number", personalData.emergencyContactPhone)}
+                    <div className="md:col-span-3">
+                        {renderCheckboxField("Same with Applicant Address", personalData.sameAsApplicantAddress)}
+                    </div>
+                    {!personalData.sameAsApplicantAddress && (
+                        <>
+                            {renderReadOnlyField("House No./Unit No./Lot/Bldg.", personalData.emergencyHouseNumber)}
+                            {renderReadOnlyField("Street/Subdivision/Purok", personalData.emergencyStreet)}
+                            {renderReadOnlyField("Barangay", personalData.emergencyBarangay)}
+                            {renderReadOnlyField("City/Municipality", personalData.emergencyCity)}
+                            {renderReadOnlyField("Province", personalData.emergencyProvince)}
+                            {renderReadOnlyField("Region", personalData.emergencyRegion)}
+                            {renderReadOnlyField("Zip Code", personalData.emergencyZipCode)}
+                        </>
+                    )}
+                </div>
             </div>
         );
     };
 
-    // Render a complete step
-    const renderStep = (stepName, stepConfig, stepData) => {
-        const hasData = Object.keys(stepData).length > 0;
+    const renderLicenseDetails = () => {
+        const licenseData = applicationData.licenseDetails || {};
+        return (
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-[#0433A9] mb-6 flex items-center">
+                    <img src={iconMap.car} alt="License Icon" className="w-6 h-6 mr-2" />
+                    License Details
+                </h2>
 
-        if (!hasData) {
-            return (
-                <div key={stepName} className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-bold text-yellow-800 mb-2">
-                                {stepName}
-                            </h2>
-                            <p className="text-yellow-700">No data provided for this step.</p>
+                {/* Application Type */}
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Application Type</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {renderCheckboxField("New Application", licenseData.newApplication)}
+                        {renderCheckboxField("Additional License", licenseData.additionalLicense)}
+                        {renderCheckboxField("Conversion from Foreign License", licenseData.conversionFromForeign)}
+                        {renderCheckboxField("Conversion from Military License", licenseData.conversionFromMilitary)}
+                        {renderCheckboxField("Renewal of Expiring License", licenseData.renewalOfExpiring)}
+                        {renderCheckboxField("Renewal of Expired License", licenseData.renewalOfExpired)}
+                        {renderCheckboxField("Duplicate License", licenseData.duplicateLicense)}
+                        {renderCheckboxField("Revision of Records", licenseData.revisionOfRecords)}
+                    </div>
+                </div>
+
+                {/* Driver License Number */}
+                {!licenseData.newApplication && (
+                    <div className="mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {renderReadOnlyField("Driver License Number", licenseData.driverLicenseNumber)}
                         </div>
+                    </div>
+                )}
+
+                {/* Medical Information */}
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Medical Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {renderMultiSelectField("Organ Donation", licenseData.organs, false, "md:col-span-1")}
+                        {renderMultiSelectField("Medical Conditions", licenseData.conditions, false, "md:col-span-1")}
+                    </div>
+                </div>
+
+                {/* Vehicle Categories */}
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Selected Vehicle Categories</h3>
+                    {licenseData.newApplication === true && (
+                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <p className="text-sm text-yellow-800">
+                                <strong>New Applicant:</strong> Only vehicle categories A, A1, and B are available for new applications.
+                            </p>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {licenseData.vehicleCategories && licenseData.vehicleCategories.length > 0 ? (
+                            licenseData.vehicleCategories.map((category) => (
+                                <div
+                                    key={category}
+                                    className="flex flex-col items-center p-3 border-2 border-[#0433A9] rounded-lg bg-[#F0F4FC] shadow-sm"
+                                >
+                                    <img
+                                        src={iconMap[category]}
+                                        alt={category}
+                                        className="w-16 h-12 mb-2"
+                                    />
+                                    <span className="text-sm font-semibold text-[#0433A9]">
+                                        {category}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-4 text-gray-500 border border-gray-200 rounded-lg bg-gray-50">
+                                No vehicle categories selected
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderDocuments = () => {
+        const documentsData = applicationData.documents || {};
+        return (
+            <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-[#0433A9] mb-6 flex items-center">
+                    <img src={BlueDocu} alt="Document Icon" className="w-6 h-6 mr-2" />
+                    Documents Uploaded
+                </h2>
+                <div className="space-y-4">
+                    {documentsData.uploadedFiles && Object.keys(documentsData.uploadedFiles).length > 0 ? (
+                        Object.entries(documentsData.uploadedFiles).map(([fieldName, file]) => (
+                            <div key={fieldName} className="flex items-center justify-between p-4 border border-gray-200 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <div className="flex items-center">
+                                    <svg className="w-8 h-8 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                        <p className="text-xs text-gray-500">
+                                            {file.type} • {(file.size / 1024 / 1024).toFixed(2)} MB
+                                        </p>
+                                        <p className="text-xs text-gray-600 capitalize">
+                                            {fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                        Uploaded
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg bg-gray-50">
+                            <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p>No documents uploaded</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderApplicationSummary = () => {
+        const personalData = applicationData.personalDetails || {};
+        const licenseData = applicationData.licenseDetails || {};
+
+        return (
+            <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg shadow-sm">
+                <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Application Summary
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <span className="font-semibold text-blue-700 block mb-1">Applicant Name:</span>
+                        <p className="text-blue-600 font-medium">
+                            {personalData.firstName} {personalData.middleName} {personalData.lastName} {personalData.nameExtension}
+                        </p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <span className="font-semibold text-blue-700 block mb-1">Application Type:</span>
+                        <p className="text-blue-600 font-medium">
+                            {licenseData.newApplication ? 'New Application' :
+                                licenseData.additionalLicense ? 'Additional License' :
+                                    licenseData.renewalOfExpiring ? 'License Renewal' : 'Other'}
+                        </p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <span className="font-semibold text-blue-700 block mb-1">Vehicle Categories:</span>
+                        <p className="text-blue-600 font-medium">
+                            {licenseData.vehicleCategories && licenseData.vehicleCategories.length > 0
+                                ? licenseData.vehicleCategories.join(', ')
+                                : 'None selected'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Application Status */}
+                <div className="mt-4 flex items-center justify-between bg-white p-4 rounded-lg shadow-sm">
+                    <div>
+                        <span className="font-semibold text-blue-700 block mb-1">Application Status:</span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            applicationData.status === APPLICATION_STATUS.COMPLETED ? 'bg-green-100 text-green-800' :
+                                applicationData.status === APPLICATION_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                        }`}>
+                            {applicationData.status === APPLICATION_STATUS.COMPLETED ? 'Ready to Submit' :
+                                applicationData.status === APPLICATION_STATUS.IN_PROGRESS ? 'In Progress' :
+                                    'Draft'}
+                        </span>
+                    </div>
+                    <div className="text-right">
+                        <span className="font-semibold text-blue-700 block mb-1">Last Saved:</span>
+                        <p className="text-blue-600 text-sm">{getLastSavedTime() || 'Never'}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderNavigationButtons = () => (
+        <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+            {/* Left - Back button */}
+            <div>
+                {onBack && (
+                    <button
+                        className="px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors flex items-center"
+                        onClick={onBack}
+                        disabled={isSubmitting}
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </button>
+                )}
+            </div>
+
+            {/* Right - Save & Exit and Submit buttons */}
+            <div className="flex gap-4">
+                <button
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleSaveAndExit}
+                    disabled={isSubmitting}
+                >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Save & Exit
+                </button>
+                <button
+                    className={`px-6 py-2 text-white rounded-md transition-colors flex items-center ${
+                        canSubmit
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-gray-400 cursor-not-allowed'
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !canSubmit}
+                    title={!canSubmit ? "Please complete all required sections before submitting" : ""}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting...
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Submit Application
+                        </>
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+
+    const renderConfirmDialog = () => (
+        showConfirmDialog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Submission</h3>
+                    <p className="text-gray-600 mb-6">
+                        Are you sure you want to submit your application? Once submitted, you won't be able to make changes.
+                    </p>
+                    <div className="flex gap-4 justify-end">
                         <button
-                            onClick={() => onEdit(stepName.toLowerCase().replace(' ', '_'))}
-                            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+                            className="px-4 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                            onClick={() => setShowConfirmDialog(false)}
                         >
-                            Add Information
+                            Cancel
+                        </button>
+                        <button
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                            onClick={confirmSubmit}
+                        >
+                            Confirm Submit
                         </button>
                     </div>
                 </div>
-            );
-        }
+            </div>
+        )
+    );
 
-        return (
-            <div key={stepName} className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">
-                        {stepName}
-                    </h2>
-                    <button
-                        onClick={() => onEdit(stepName.toLowerCase().replace(' ', '_'))}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                        Edit
-                    </button>
+    const renderSuccessMessage = () => (
+        submitSuccess && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 text-center">
+                    <div className="mb-4">
+                        <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Application Submitted Successfully!</h3>
+                        <p className="text-gray-600 mb-4">
+                            Your driver's license application has been submitted. You will be redirected to the dashboard shortly.
+                        </p>
+                        <div className="text-sm text-gray-500">
+                            Redirecting in 3 seconds...
+                        </div>
+                    </div>
                 </div>
+            </div>
+        )
+    );
 
-                {stepConfig.sections.map(section =>
-                    renderSection(section, stepData, stepName)
-                )}
+    if (!applicationData) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading application data...</p>
+                </div>
             </div>
         );
-    };
-
-    // Calculate completion status
-    const getCompletionStatus = () => {
-        const steps = [
-            { name: 'Personal Details', data: allFormData.personalDetails },
-            { name: 'License Details', data: allFormData.licenseDetails },
-            { name: 'Applicant Documents', data: allFormData.applicantDocuments }
-        ];
-
-        const completedSteps = steps.filter(step => Object.keys(step.data).length > 0).length;
-        const totalSteps = steps.length;
-
-        return { completed: completedSteps, total: totalSteps };
-    };
-
-    const { completed, total } = getCompletionStatus();
-    const isReadyToSubmit = completed === total;
+    }
 
     return (
         <div>
-            <main>
-                <div>
-                    {/* Step Navigation */}
-                    <div className="flex justify-center mb-8">
-                        <div className="flex items-center space-x-4 sm:space-x-8 gap-4">
-                            {steps.map((step, index) => (
-                                <div key={step.name} className="flex flex-col items-center">
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
-                                        index === 3 ? 'bg-blue-600' : 'bg-gray-300'
-                                    }`}>
-                                        <img src={step.icon} alt="" width={30} height={30} />
-                                    </div>
-                                    <span className={`font-medium text-sm ${
-                                        index === 3 ? 'text-blue-600' : 'text-gray-400'
-                                    }`}>
-                                        {step.name}
-                                    </span>
-                                    <div className={`w-25 h-1 mt-2 ${
-                                        index === 3 ? 'bg-blue-600' : 'bg-gray-300'
-                                    }`}></div>
-                                    <span className="text-gray-400 text-xs mt-1">Step {index + 1}</span>
-                                </div>
-                            ))}
+            <div>
+                <main>
+                    <div>
+                        {renderStepNavigation()}
+
+                        {/* Main page heading */}
+                        <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                            <h1 className="text-3xl font-bold text-[#0433A9] flex items-center mb-2">
+                                <img src={iconMap.finalize} alt="Finalize Icon" className="w-8 h-8 mr-3 text-blue-800" />
+                                Review Application
+                            </h1>
+                            <p className="text-gray-600">
+                                Please review all information before submitting your application. All fields are read-only.
+                            </p>
+                        </div>
+
+                        <div className="flex-1 flex flex-col">
+                            {/* Application Summary */}
+                            {renderApplicationSummary()}
+
+                            {/* Render all sections */}
+                            {renderPersonalDetails()}
+                            {renderAddressDetails()}
+                            {renderEmploymentDetails()}
+                            {renderEmergencyContact()}
+                            {renderLicenseDetails()}
+                            {renderDocuments()}
+
+                            {renderNavigationButtons()}
                         </div>
                     </div>
+                </main>
+            </div>
 
-                    {/* Completion Status */}
-                    <div className="mb-8">
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-900">
-                                        Application Progress
-                                    </h2>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        {completed} of {total} steps completed
-                                    </p>
-                                </div>
-                                <div className="flex items-center">
-                                    <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-4">
-                                        <div
-                                            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                                            style={{ width: `${(completed / total) * 100}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-700">
-                                        {Math.round((completed / total) * 100)}%
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Review Sections */}
-                    <div className="space-y-6">
-                        {renderStep("Personal Details", personalDetailsConfig, allFormData.personalDetails)}
-                        {/* Uncomment these when you have the config files */}
-                        {/* {renderStep("License Details", licenseDetailsConfig, allFormData.licenseDetails)} */}
-                        {/* {renderStep("Applicant Documents", applicantDocumentsConfig, allFormData.applicantDocuments)} */}
-                    </div>
-
-                    {/* Submission Warning/Confirmation */}
-                    {!isReadyToSubmit && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-yellow-800">
-                                        Application Incomplete
-                                    </h3>
-                                    <div className="mt-2 text-sm text-yellow-700">
-                                        <p>Please complete all required steps before submitting your application.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {isReadyToSubmit && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-green-800">
-                                        Ready to Submit
-                                    </h3>
-                                    <div className="mt-2 text-sm text-green-700">
-                                        <p>Your application is complete and ready for submission.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Navigation buttons */}
-                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-                        {/* Left - Back button */}
-                        <div>
-                            <button
-                                className="px-6 py-2 text-gray-500 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                                onClick={onBack}
-                            >
-                                Back
-                            </button>
-                        </div>
-
-                        {/* Right - Submit button */}
-                        <div className="flex gap-4">
-                            <button
-                                className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                                onClick={() => {
-                                    // Save current state and exit
-                                    console.log('Saving and exiting...', allFormData);
-                                }}
-                            >
-                                Save & Exit
-                            </button>
-                            <button
-                                className={`px-8 py-2 rounded-md transition-colors ${
-                                    isReadyToSubmit
-                                        ? 'bg-green-600 text-white hover:bg-green-700'
-                                        : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                }`}
-                                onClick={() => {
-                                    if (isReadyToSubmit) {
-                                        onProceed(allFormData);
-                                    }
-                                }}
-                                disabled={!isReadyToSubmit}
-                            >
-                                {isReadyToSubmit ? 'Submit Application' : 'Complete All Steps'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+            {/* Modals */}
+            {renderConfirmDialog()}
+            {renderSuccessMessage()}
         </div>
     );
 };
