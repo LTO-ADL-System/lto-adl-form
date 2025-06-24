@@ -18,6 +18,8 @@ import Home from './routes/Home.jsx';
 import Profile from "./routes/Profile.jsx";
 import Application from './routes/Application.jsx';
 import AdminDashboard from './components/AdminDashboard';
+// Import AdminApplicants for routing
+import AdminApplicants from './components/AdminApplicants';
 
 function App() {
     // PROTOTYPE: Mock authentication state for UI testing
@@ -26,8 +28,9 @@ function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const location = useLocation();
 
-    // Determine if on dashboard route
+    // Determine if on dashboard or applicants route
     const isDashboard = location.pathname === "/dashboard";
+    const isApplicants = location.pathname === "/applicants";
 
     // PROTOTYPE: Comment out real authentication check
     // TODO: Implement real authentication check with backend
@@ -174,7 +177,7 @@ function App() {
         // }
 
         // PROTOTYPE: Mock successful verification
-        // For testing, accept any 6-digit code
+        // For testing, accept any 4-digit code
         if (verificationCode && verificationCode.length === 4) {
             const mockUser = {
                 id: Date.now(),
@@ -214,12 +217,12 @@ function App() {
     const showOnboardingNav = !isAuthenticated;
     const showAuthenticatedNav = isAuthenticated;
 
-    // Only show user navbars and BottomBorder if not on /dashboard
+    // Only show user navbars and BottomBorder if not on /dashboard or /applicants
     return (
         <div className="min-h-screen flex flex-col bg-red-800">
             {/* Conditional Navigation */}
-            {!isDashboard && showOnboardingNav && <OnboardingNavBar />}
-            {!isDashboard && showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
+            {!isDashboard && !isApplicants && showOnboardingNav && <OnboardingNavBar />}
+            {!isDashboard && !isApplicants && showAuthenticatedNav && <NavigationHeader onLogout={handleLogout} currentUser={currentUser} />}
 
             {/* Routes */}
             <Routes>
@@ -288,10 +291,18 @@ function App() {
                         isAuthenticated ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/signin" replace />
                     }
                 />
+
+                {/* Admin Applicants Route */}
+                <Route
+                    path="/applicants"
+                    element={
+                        isAuthenticated ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                    }
+                />
             </Routes>
 
-            {/* Show BottomBorder only on public pages and not on /dashboard */}
-            {!isDashboard && showOnboardingNav && <BottomBorder />}
+            {/* Show BottomBorder only on public pages and not on /dashboard or /applicants */}
+            {!isDashboard && !isApplicants && showOnboardingNav && <BottomBorder />}
         </div>
     );
 }
