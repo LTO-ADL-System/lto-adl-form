@@ -170,8 +170,8 @@ class VerifyOTP(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
@@ -204,8 +204,8 @@ class SimpleRegisterWithOTP(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
@@ -252,8 +252,8 @@ class RegisterWithOTP(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
@@ -266,8 +266,8 @@ class LoginWithOTP(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
@@ -325,8 +325,8 @@ class OTPVerification(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
@@ -368,8 +368,8 @@ class SupabaseRegisterWithOTP(BaseModel):
     def validate_otp_code(cls, v):
         if not v.isdigit():
             raise ValueError('OTP code must contain only digits')
-        if len(v) != 6:
-            raise ValueError('OTP code must be 6 digits')
+        if len(v) != 4:
+            raise ValueError('OTP code must be 4 digits')
         return v
 
 
