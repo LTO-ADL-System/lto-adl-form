@@ -53,6 +53,7 @@ class PersonalInfo(BaseModel):
     educational_attainment: EducationalAttainment
     blood_type: BloodType
     sex: Sex
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: bool = False
 
     @validator('contact_num')
@@ -82,6 +83,14 @@ class PersonalInfo(BaseModel):
             raise ValueError('Applicant must be at least 15 years old')
         if age > 100:
             raise ValueError('Invalid birthdate')
+        return v
+    
+    @validator('tin')
+    def validate_tin(cls, v):
+        if v is not None:
+            import re
+            if not re.match(r'^[0-9]{9}$', v):
+                raise ValueError('TIN must be exactly 9 digits')
         return v
 
 class CompleteApplicationCreate(BaseModel):

@@ -51,6 +51,7 @@ class Applicant(Base, TimestampMixin):
     
     # Optional fields
     license_number = Column(String)
+    tin = Column(String(15), nullable=True)  # Tax Identification Number - 9 digits
     is_organ_donor = Column(Boolean, default=False)
     
     # Note: Authentication is handled by Supabase Auth
@@ -92,6 +93,10 @@ class Applicant(Base, TimestampMixin):
         CheckConstraint(
             "weight IS NULL OR (weight >= 0 AND weight <= 500)",
             name="check_weight_range"
+        ),
+        CheckConstraint(
+            "tin IS NULL OR tin ~ '^[0-9]{9}$'",
+            name="check_tin_format"
         ),
     )
     

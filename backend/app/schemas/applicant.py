@@ -49,6 +49,7 @@ class ApplicantBase(BaseModel):
     educational_attainment: EducationalAttainment
     blood_type: BloodType
     sex: Sex
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: bool = False
 
     @validator('contact_num')
@@ -79,6 +80,12 @@ class ApplicantBase(BaseModel):
         if age > 100:
             raise ValueError('Invalid birthdate')
         return v
+    
+    @validator('tin')
+    def validate_tin(cls, v):
+        if v is not None and not re.match(r'^[0-9]{9}$', v):
+            raise ValueError('TIN must be exactly 9 digits')
+        return v
 
 class MinimalApplicantCreate(BaseModel):
     """Minimal applicant creation for initial registration - only email required"""
@@ -101,6 +108,7 @@ class MinimalApplicantCreate(BaseModel):
     educational_attainment: Optional[EducationalAttainment] = EducationalAttainment.COLLEGE
     blood_type: Optional[BloodType] = BloodType.O_POSITIVE
     sex: Optional[Sex] = Sex.MALE
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: Optional[bool] = False
 
 class ApplicantCreate(BaseModel):
@@ -124,6 +132,7 @@ class ApplicantCreate(BaseModel):
     educational_attainment: Optional[EducationalAttainment] = None
     blood_type: Optional[BloodType] = None
     sex: Optional[Sex] = None
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: Optional[bool] = False
 
     @validator('contact_num')
@@ -155,6 +164,12 @@ class ApplicantCreate(BaseModel):
             if age > 100:
                 raise ValueError('Invalid birthdate')
         return v
+    
+    @validator('tin')
+    def validate_tin(cls, v):
+        if v is not None and not re.match(r'^[0-9]{9}$', v):
+            raise ValueError('TIN must be exactly 9 digits')
+        return v
 
 class ApplicantUpdate(BaseModel):
     family_name: Optional[str] = None
@@ -172,12 +187,19 @@ class ApplicantUpdate(BaseModel):
     educational_attainment: Optional[EducationalAttainment] = None
     blood_type: Optional[BloodType] = None
     sex: Optional[Sex] = None
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: Optional[bool] = None
 
     @validator('contact_num')
     def validate_phone(cls, v):
         if v and not re.match(r'^\+63\d{10}$', v):
             raise ValueError('Phone number must be in format +63XXXXXXXXXX')
+        return v
+    
+    @validator('tin')
+    def validate_tin(cls, v):
+        if v is not None and not re.match(r'^[0-9]{9}$', v):
+            raise ValueError('TIN must be exactly 9 digits')
         return v
 
 class ApplicantResponse(ApplicantBase, BaseSchema, TimestampMixin):
