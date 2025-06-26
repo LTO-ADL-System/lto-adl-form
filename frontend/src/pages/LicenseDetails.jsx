@@ -30,7 +30,7 @@ const LicenseDetails = ({onProceed, onBack}) => {
   } = useSessionState();
 
   const [formData, setFormData] = useState({});
-  const [selectedVehicleCategories, setSelectedVehicleCategories] = useState(['']);
+  const [selectedVehicleCategories, setSelectedVehicleCategories] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState({}); // Track which dropdowns are open
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 

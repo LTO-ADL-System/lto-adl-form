@@ -12,8 +12,8 @@ const FileUploadModal = ({ isOpen, onClose, onFileSelect, title = "Upload Docume
   const validateFile = (file) => {
     if (!file) return false;
     
-    if (file.type !== 'application/pdf') {
-      setError('Please select a PDF file only');
+    if (!allowedTypes.includes(file.type)) {
+      setError(`Please select a file of type: ${allowedTypes.join(', ')}`);
       return false;
     }
     
