@@ -64,16 +64,17 @@ class ApplicationService {
       documents: formData.documents || [],
       emergency_contacts: formData.emergencyContacts || [],
       employment_info: formData.employmentInfo || [],
-      family_info: formData.familyInfo || []
+      family_info: formData.familyInfo || [],
+      additional_data: formData.additionalData || {}
     };
   }
 
   // Get application type display name
   getApplicationTypeDisplayName(typeId) {
     const types = {
-      'ATID_NEW': 'New License',
-      'ATID_REN': 'License Renewal',
-      'ATID_DUP': 'Duplicate License'
+      'ATID_A': 'New License',
+      'ATID_B': 'License Renewal', 
+      'ATID_D': 'Duplicate License'
     };
     return types[typeId] || typeId;
   }

@@ -105,7 +105,6 @@
             { "value": "Elementary", "label": "Elementary" },
             { "value": "High School", "label": "High School" },
             { "value": "College", "label": "College" },
-            { "value": "Graduate", "label": "Graduate" },
             { "value": "Post Graduate", "label": "Post Graduate" }
           ],
           "gridColumn": 4
@@ -127,30 +126,123 @@
           "gridColumn": 4,
           "maxLength": 15,
           "pattern": "\\d{3}-\\d{3}-\\d{3}-\\d{3}"
+        }
+      ]
+    },
+    {
+      "title": "Father's Name",
+      "fields": [
+        {
+          "name": "father_family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
         },
         {
-          "name": "father_name",
-          "label": "Father's Name",
+          "name": "father_first_name",
+          "label": "First Name",
           "type": "text",
-          "placeholder": "Father's Name",
-          "required": false,
-          "gridColumn": 5
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
         },
         {
-          "name": "mother_name",
-          "label": "Mother's Name",
+          "name": "father_middle_name",
+          "label": "Middle Name",
           "type": "text",
-          "placeholder": "Mother's Name",
+          "placeholder": "eg. Santos",
           "required": false,
-          "gridColumn": 5
+          "gridColumn": 1,
+          "conditionalField": "father_deceased"
         },
         {
-          "name": "spouse_name",
-          "label": "Spouse's Name",
-          "type": "text",
-          "placeholder": "Spouse's Name",
+          "name": "father_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
           "required": false,
-          "gridColumn": 5
+          "gridColumn": 2
+        }
+      ]
+    },
+    {
+      "title": "Mother's Name",
+      "fields": [
+        {
+          "name": "mother_family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
+        },
+        {
+          "name": "mother_first_name",
+          "label": "First Name",
+          "type": "text",
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
+        },
+        {
+          "name": "mother_middle_name",
+          "label": "Middle Name",
+          "type": "text",
+          "placeholder": "eg. Santos",
+          "required": false,
+          "gridColumn": 1,
+          "conditionalField": "mother_deceased"
+        },
+        {
+          "name": "mother_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
+        }
+      ]
+    },
+    {
+      "title": "Spouse's Name",
+      "fields": [
+        {
+          "name": "spouse_family_name",
+          "label": "Family Name",
+          "type": "text",
+          "placeholder": "eg. Dela Cruz",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
+        },
+        {
+          "name": "spouse_first_name",
+          "label": "First Name",
+          "type": "text",
+          "placeholder": "eg. Juan",
+          "required": true,
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
+        },
+        {
+          "name": "spouse_middle_name",
+          "label": "Middle Name",
+          "type": "text",
+          "placeholder": "eg. Santos",
+          "required": false,
+          "gridColumn": 1,
+          "conditionalField": "spouse_deceased"
+        },
+        {
+          "name": "spouse_deceased",
+          "label": "Deceased",
+          "type": "checkbox",
+          "required": false,
+          "gridColumn": 2
         }
       ]
     },

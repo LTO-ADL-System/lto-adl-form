@@ -16,6 +16,10 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
             user_uuid = UUID(user_uuid)
         return db.query(Applicant).filter(Applicant.uuid == user_uuid).first()
 
+    def get_applicant_by_uuid(self, db: Session, *, uuid: str) -> Optional[Applicant]:
+        """Alias for get_by_uuid - Get applicant by Supabase UUID"""
+        return self.get_by_uuid(db, user_uuid=uuid)
+
     def get_by_email(self, db: Session, *, email: str) -> Optional[Applicant]:
         """Get applicant by email"""
         return db.query(Applicant).filter(Applicant.email == email).first()
@@ -33,6 +37,10 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
     
     def get_by_license_number(self, db: Session, *, license_number: str) -> Optional[Applicant]:
         return db.query(Applicant).filter(Applicant.license_number == license_number).first()
+    
+    def get_by_tin(self, db: Session, *, tin: str) -> Optional[Applicant]:
+        """Get applicant by TIN (Tax Identification Number)"""
+        return db.query(Applicant).filter(Applicant.tin == tin).first()
     
     def create_minimal(self, db: Session, *, obj_in: MinimalApplicantCreate, uuid: UUID) -> Applicant:
         """Create minimal applicant profile for initial registration"""
@@ -54,6 +62,7 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
             educational_attainment=obj_in.educational_attainment.value if obj_in.educational_attainment else None,
             blood_type=obj_in.blood_type.value if obj_in.blood_type else None,
             sex=obj_in.sex.value if obj_in.sex else None,
+            tin=obj_in.tin,  # Add TIN field
             is_organ_donor=obj_in.is_organ_donor
         )
         db.add(db_obj)
@@ -62,13 +71,14 @@ class CRUDApplicant(CRUDBase[Applicant, ApplicantCreate, ApplicantUpdate]):
         return db_obj
     
     def search(self, db: Session, *, query: str, skip: int = 0, limit: int = 100) -> List[Applicant]:
-        """Search applicants by name, contact number, email, or license number"""
+        """Search applicants by name, contact number, email, license number, or TIN"""
         search_filter = or_(
             Applicant.first_name.ilike(f"%{query}%"),
             Applicant.family_name.ilike(f"%{query}%"),
             Applicant.contact_num.ilike(f"%{query}%"),
             Applicant.email.ilike(f"%{query}%"),
-            Applicant.license_number.ilike(f"%{query}%")
+            Applicant.license_number.ilike(f"%{query}%"),
+            Applicant.tin.ilike(f"%{query}%")  # Add TIN to search
         )
         return db.query(Applicant).filter(search_filter).offset(skip).limit(limit).all()
     

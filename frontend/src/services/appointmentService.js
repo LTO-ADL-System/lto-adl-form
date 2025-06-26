@@ -42,11 +42,45 @@ class AppointmentService {
   // Format appointment data for submission
   formatAppointmentData(formData) {
     return {
-      application_id: formData.applicationId,
-      location_id: formData.locationId,
-      appointment_date: formData.appointmentDate,
-      appointment_time: formData.appointmentTime
+      application_id: formData.applicationId || formData.application_id,
+      location_id: formData.locationId || formData.location_id,
+      appointment_date: formData.appointmentDate || formData.appointment_date,
+      appointment_time: formData.appointmentTime || formData.appointment_time
     };
+  }
+
+  // Convert time from 12-hour to 24-hour format
+  convertTo24HourFormat(time12h) {
+    try {
+      const [time, period] = time12h.trim().split(' ');
+      let [hours, minutes] = time.split(':');
+      
+      // Convert to integers for proper calculation
+      hours = parseInt(hours, 10);
+      minutes = parseInt(minutes, 10) || 0;
+      
+      // Convert to 24-hour format
+      if (period === 'PM' && hours !== 12) {
+        hours = hours + 12;
+      } else if (period === 'AM' && hours === 12) {
+        hours = 0;
+      }
+      
+      // Format with leading zeros and add seconds
+      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+      
+      console.log(`Converting time: ${time12h} -> ${formattedTime}`);
+      return formattedTime;
+    } catch (error) {
+      console.error('Error converting time format:', error, 'Input:', time12h);
+      throw new Error(`Invalid time format: ${time12h}`);
+    }
+  }
+
+  // Convert date to ISO format
+  formatDateForAPI(year, month, day) {
+    const date = new Date(year, month, day);
+    return date.toISOString().split('T')[0];
   }
 
   // Get appointment status display name

@@ -33,16 +33,22 @@ const SignIn = ({ onLogin }) => {
         setError('');
 
         try {
-            // PROTOTYPE: Use the onLogin function passed from App.jsx
+            // Use the onLogin function passed from App.jsx
             const result = await onLogin(formData.email, formData.password);
 
             if (result.success) {
-                // Navigate to home page after successful sign in
-                navigate('/home');
+                if (result.requiresOTP) {
+                    // Navigate to confirmation page for OTP verification
+                    navigate('/confirmation');
+                } else {
+                    // Fallback - navigate to home page (shouldn't happen with current flow)
+                    navigate('/home');
+                }
             } else {
                 setError(result.message || 'Sign in failed. Please try again.');
             }
         } catch (err) {
+            console.error('Sign in error:', err);
             setError('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);

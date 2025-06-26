@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
+import authService from './services/authService.js';
 
 // NAVIGATION BARS
 import NavigationHeader from './components/NavigationHeader.jsx';
@@ -22,83 +23,79 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminApplicants from './components/AdminApplicants';
 
 function App() {
-    // PROTOTYPE: Mock authentication state for UI testing
-    // TODO: Replace with real authentication when backend is ready
-    const [isAuthenticated, setIsAuthenticated] = useState(true);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [pendingAuthData, setPendingAuthData] = useState(null); // Store auth data during OTP flow
     const location = useLocation();
 
-    // Determine if on dashboard or applicants route
     const isDashboard = location.pathname === "/dashboard";
     const isApplicants = location.pathname === "/applicants";
 
-    // PROTOTYPE: Comment out real authentication check
-    // TODO: Implement real authentication check with backend
-    // useEffect(() => {
-    //     const checkAuthStatus = async () => {
-    //         try {
-    //             const response = await fetch('/api/auth/verify', {
-    //                 headers: {
-    //                     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //                 }
-    //             });
-    //             if (response.ok) {
-    //                 const userData = await response.json();
-    //                 setCurrentUser(userData);
-    //                 setIsAuthenticated(true);
-    //             }
-    //         } catch (error) {
-    //             console.error('Auth check failed:', error);
-    //         }
-    //     };
-    //     checkAuthStatus();
-    // }, []);
+    // Check authentication status on app startup
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            try {
+                if (authService.isAuthenticated()) {
+                    const userData = authService.getCurrentUser();
+                    if (userData) {
+                        setCurrentUser(userData);
+                        setIsAuthenticated(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                authService.logout();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkAuthStatus();
+    }, []);
 
-    // PROTOTYPE: Mock login function for UI testing
-    // TODO: Replace with real API call to backend
-    const handleLogin = async (email, password) => {
-        // MOCK: Simulate successful login for any email/password
-        // TODO: Replace with real authentication
-        // try {
-        //     const response = await fetch('/api/auth/login', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify({ email, password }),
-        //     });
-        //
-        //     if (response.ok) {
-        //         const { user, token } = await response.json();
-        //         localStorage.setItem('token', token);
-        //         setCurrentUser(user);
-        //         setIsAuthenticated(true);
-        //         return { success: true, user };
-        //     } else {
-        //         const errorData = await response.json();
-        //         return { success: false, message: errorData.message };
-        //     }
-        // } catch (error) {
-        //     return { success: false, message: 'Login failed. Please try again.' };
-        // }
+    // Auto refresh token periodically
+    useEffect(() => {
+        if (isAuthenticated) {
+            const refreshInterval = setInterval(async () => {
+                try {
+                    await authService.autoRefreshToken();
+                } catch (error) {
+                    console.error('Auto refresh failed:', error);
+                    handleLogout();
+                }
+            }, 15 * 60 * 1000); // Refresh every 15 minutes
 
-        // PROTOTYPE: Mock successful login
-        if (email && password) {
-            const mockUser = {
-                id: 1,
-                name: email.split('@')[0],
-                email: email,
-            };
-            setCurrentUser(mockUser);
-            setIsAuthenticated(true);
-            return { success: true, user: mockUser };
+            return () => clearInterval(refreshInterval);
         }
-        return { success: false, message: 'Please enter email and password' };
+    }, [isAuthenticated]);
+
+    // Real login function using backend API
+    const handleLogin = async (email, password) => {
+        try {
+            const response = await authService.loginRequest(email, password);
+
+            if (response.success) {
+                // Store the auth data for OTP verification
+                setPendingAuthData({
+                    email,
+                    password,
+                    action: 'login'
+                });
+                return {
+                    success: true,
+                    message: 'OTP sent to your email. Please check your inbox.',
+                    requiresOTP: true
+                };
+            } else {
+                return { success: false, message: response.message || 'Login failed. Please try again.' };
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            return { success: false, message: error.message || 'Login failed. Please try again.' };
+        }
     };
 
-    // PROTOTYPE: Mock register function for UI testing
-    // TODO: Replace with real API call to backend
-    // TODO: Add handler for emails that already exists
+    // Real register function using backend API
     const handleRegister = async (email, password, confirmPassword) => {
         // Basic client-side validation
         if (!email || !password) {
@@ -113,111 +110,90 @@ function App() {
             return { success: false, message: 'Password must be at least 6 characters' };
         }
 
-        // TODO: Replace with real API call
-        // try {
-        //     const response = await fetch('/api/auth/register', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify({ email, password }),
-        //     });
-        //
-        //     if (response.ok) {
-        //         // DON'T authenticate immediately - let them verify first
-        //         return { success: true, message: 'Registration successful. Please check your email.' };
-        //     } else {
-        //         const errorData = await response.json();
-        //         return { success: false, message: errorData.message };
-        //     }
-        // } catch (error) {
-        //     return { success: false, message: 'Registration failed. Please try again.' };
-        // }
+        try {
+            const response = await authService.signUpRequest(email, password);
 
-        // PROTOTYPE: Mock successful registration WITHOUT authentication
-        // Store registration data temporarily (in real app, this would be handled by backend)
-        // DON'T set currentUser or isAuthenticated here
-
-        return {
-            success: true,
-            message: 'Registration successful. Please verify your email.',
-            // You can store user data temporarily if needed for the confirmation process
-            pendingUser: {
-                email: email,
-                // Don't store password in real app
+            if (response.success) {
+                // Store the auth data for OTP verification
+                setPendingAuthData({
+                    email,
+                    password,
+                    action: 'signup'
+                });
+                return {
+                    success: true,
+                    message: 'OTP sent to your email. Please check your inbox.',
+                    requiresOTP: true
+                };
+            } else {
+                return { success: false, message: response.message || 'Registration failed. Please try again.' };
             }
-        };
+        } catch (error) {
+            console.error('Registration error:', error);
+            return { success: false, message: error.message || 'Registration failed. Please try again.' };
+        }
     };
 
-    // PROTOTYPE: Mock confirmation/verification function
-    // TODO: Replace with real API call to backend
-    const handleConfirmation = async (email, verificationCode) => {
-        // TODO: Replace with real API call
-        // try {
-        //     const response = await fetch('/api/auth/verify-email', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify({ email, verificationCode }),
-        //     });
-        //
-        //     if (response.ok) {
-        //         const { user, token } = await response.json();
-        //         localStorage.setItem('token', token);
-        //         setCurrentUser(user);
-        //         setIsAuthenticated(true);
-        //         return { success: true, user };
-        //     } else {
-        //         const errorData = await response.json();
-        //         return { success: false, message: errorData.message };
-        //     }
-        // } catch (error) {
-        //     return { success: false, message: 'Verification failed. Please try again.' };
-        // }
-
-        // PROTOTYPE: Mock successful verification
-        // For testing, accept any 4-digit code
-        if (verificationCode && verificationCode.length === 4) {
-            const mockUser = {
-                id: Date.now(),
-                name: email.split('@')[0], // Extract name from email
-                email: email,
-            };
-            setCurrentUser(mockUser);
-            setIsAuthenticated(true);
-            return { success: true, user: mockUser };
+    // Real OTP verification function
+    const handleConfirmation = async (otpCode) => {
+        if (!pendingAuthData) {
+            return { success: false, message: 'No pending authentication. Please start over.' };
         }
 
-        return { success: false, message: 'Invalid verification code' };
+        try {
+            const { email, password, action } = pendingAuthData;
+            const response = await authService.verifyOTP(email, otpCode, action, password);
+
+            if (response.success && response.data) {
+                const userData = {
+                    id: response.data.user_id,
+                    email: response.data.email,
+                    isAdmin: response.data.email === 'madalto.official@gmail.com'
+                };
+
+                setCurrentUser(userData);
+                setIsAuthenticated(true);
+                setPendingAuthData(null); // Clear pending data
+
+                return {
+                    success: true,
+                    user: userData,
+                    action: action // Return action to determine navigation
+                };
+            } else {
+                return { success: false, message: response.message || 'Invalid verification code' };
+            }
+        } catch (error) {
+            console.error('OTP verification error:', error);
+            return { success: false, message: error.message || 'Verification failed. Please try again.' };
+        }
     };
 
-    // PROTOTYPE: Mock logout function
-    // TODO: Replace with real API call to backend
+    // Real logout function
     const handleLogout = async () => {
-        // TODO: Call backend to invalidate session
-        // try {
-        //     await fetch('/api/auth/logout', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Authorization': `Bearer ${localStorage.getItem('token')}`
-        //         }
-        //     });
-        // } catch (error) {
-        //     console.error('Logout error:', error);
-        // }
-        // localStorage.removeItem('token');
-
-        // PROTOTYPE: Mock logout
-        setCurrentUser(null);
-        setIsAuthenticated(false);
+        try {
+            authService.logout();
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+            setPendingAuthData(null);
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
     };
+
+    // Show loading while checking authentication
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#F8F8F8]">
+                <div className="text-[#03267F] text-lg">Loading...</div>
+            </div>
+        );
+    }
 
     // Determine which navbar to show based on authentication status
     const showOnboardingNav = !isAuthenticated;
     const showAuthenticatedNav = isAuthenticated;
 
-    // Only show user navbars and BottomBorder if not on /dashboard or /applicants
     return (
         <div className="min-h-screen flex flex-col bg-red-800">
             {/* Conditional Navigation */}
@@ -230,14 +206,16 @@ function App() {
                 <Route
                     path="/"
                     element={
-                        isAuthenticated ? <Navigate to="/home" replace /> : <LandingPage />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
+                        ) : <LandingPage />
                     }
                 />
                 <Route
                     path="/register"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
                             <Register onRegister={handleRegister} />
                         )
@@ -247,7 +225,7 @@ function App() {
                     path="/signin"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
                             <SignIn onLogin={handleLogin} />
                         )
@@ -257,9 +235,13 @@ function App() {
                     path="/confirmation"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/home" replace />
+                            currentUser?.isAdmin ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />
                         ) : (
-                            <Confirmation onConfirmation={handleConfirmation} />
+                            <Confirmation
+                                onConfirmation={handleConfirmation}
+                                userEmail={pendingAuthData?.email}
+                                isLoading={isLoading}
+                            />
                         )
                     }
                 />
@@ -288,7 +270,9 @@ function App() {
                 <Route
                     path="/dashboard"
                     element={
-                        isAuthenticated ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <AdminDashboard currentUser={currentUser} /> : <Navigate to="/home" replace />
+                        ) : <Navigate to="/signin" replace />
                     }
                 />
 
@@ -296,7 +280,9 @@ function App() {
                 <Route
                     path="/applicants"
                     element={
-                        isAuthenticated ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/signin" replace />
+                        isAuthenticated ? (
+                            currentUser?.isAdmin ? <AdminApplicants currentUser={currentUser} /> : <Navigate to="/home" replace />
+                        ) : <Navigate to="/signin" replace />
                     }
                 />
             </Routes>

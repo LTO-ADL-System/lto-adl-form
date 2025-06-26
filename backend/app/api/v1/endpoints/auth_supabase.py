@@ -43,7 +43,7 @@ async def sign_up_request(
         user_type = "admin" if email == ADMIN_EMAIL else "applicant"
         
         # Generate OTP code
-        otp_code = supabase_auth.generate_otp_code()
+        otp_code = supabase_auth.generate_otp_code(4)
         
         # Store user credentials temporarily until OTP verification
         await supabase_auth.store_pending_user(email, password, user_type, otp_code)
@@ -61,7 +61,7 @@ async def sign_up_request(
             success=True,
             message="Verification code sent to your email. Please verify to complete registration.",
             data=OTPResponse(
-                message="Please enter the 6-digit code sent to your email to complete registration",
+                message="Please enter the 4-digit code sent to your email to complete registration",
                 expires_in_minutes=5
             )
         )
@@ -111,7 +111,7 @@ async def login_request(
                 )
         
         # Generate and send OTP for additional security
-        otp_code = supabase_auth.generate_otp_code()
+        otp_code = supabase_auth.generate_otp_code(4)
         await supabase_auth.store_otp_temporarily(email, otp_code, "login")
         
         # Send OTP email
@@ -127,7 +127,7 @@ async def login_request(
             success=True,
             message="Verification code sent to your email. Please check your inbox.",
             data=OTPResponse(
-                message="Please enter the 6-digit code sent to your email",
+                message="Please enter the 4-digit code sent to your email",
                 expires_in_minutes=5
             )
         )
@@ -364,13 +364,27 @@ async def handle_login_verification(email: str, password: str, otp_code: str, db
             )
         else:
             # Regular applicant user
-            # Check if applicant profile exists (optional)
+            # Check if applicant profile exists (users become applicants only after submitting applications)
             try:
                 applicant = crud_applicant.get_applicant_by_uuid(db, uuid=UUID(user_uuid))
                 has_applicant_profile = applicant is not None
-            except Exception as e:
-                print(f"DEBUG - Could not check applicant profile: {e}")
-                applicant = None
+                applicant_data = None
+                
+                if has_applicant_profile and applicant:
+                    # Convert SQLAlchemy model to dict for JSON serialization
+                    applicant_data = {
+                        "applicant_id": str(applicant.applicant_id),
+                        "first_name": applicant.first_name,
+                        "middle_name": applicant.middle_name,
+                        "last_name": applicant.last_name,
+                        "email": applicant.email,
+                        "phone_number": applicant.phone_number,
+                        "created_at": applicant.created_at.isoformat() if applicant.created_at else None,
+                        "updated_at": applicant.updated_at.isoformat() if applicant.updated_at else None
+                    }
+            except Exception:
+                # Normal case - user hasn't submitted application yet, so no applicant profile exists
+                applicant_data = None
                 has_applicant_profile = False
             
             return ResponseModel(
@@ -385,7 +399,7 @@ async def handle_login_verification(email: str, password: str, otp_code: str, db
                     "expires_in": signin_result.get("expires_in", 3600),
                     "is_admin": False,
                     "has_applicant_profile": has_applicant_profile,
-                    "applicant_profile": applicant if has_applicant_profile else None
+                    "applicant_profile": applicant_data
                 }
             )
     
@@ -461,9 +475,23 @@ async def get_user_profile(
             try:
                 applicant = crud_applicant.get_by_email(db, email=email)
                 has_applicant_profile = applicant is not None
+                applicant_data = None
+                
+                if has_applicant_profile and applicant:
+                    # Convert SQLAlchemy model to dict for JSON serialization
+                    applicant_data = {
+                        "applicant_id": str(applicant.applicant_id),
+                        "first_name": applicant.first_name,
+                        "middle_name": applicant.middle_name,
+                        "last_name": applicant.last_name,
+                        "email": applicant.email,
+                        "phone_number": applicant.phone_number,
+                        "created_at": applicant.created_at.isoformat() if applicant.created_at else None,
+                        "updated_at": applicant.updated_at.isoformat() if applicant.updated_at else None
+                    }
             except Exception as e:
                 print(f"DEBUG - Could not check applicant profile: {e}")
-                applicant = None
+                applicant_data = None
                 has_applicant_profile = False
             
             return ResponseModel(
@@ -474,7 +502,7 @@ async def get_user_profile(
                     "email": email,
                     "is_admin": False,
                     "has_applicant_profile": has_applicant_profile,
-                    "applicant_profile": applicant if has_applicant_profile else None
+                    "applicant_profile": applicant_data
                 }
             )
         

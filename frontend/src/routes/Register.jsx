@@ -20,6 +20,8 @@ const Register = ({ onRegister }) => {
     const [passwordsMatch, setPasswordsMatch] = useState(true);
     // ADD THIS LINE - New state for real-time password length validation
     const [passwordLengthValid, setPasswordLengthValid] = useState(true);
+    // ADD THIS LINE - New state for password strength validation
+    const [passwordStrengthValid, setPasswordStrengthValid] = useState(true);
     const navigate = useNavigate();
 
     // REPLACE YOUR EXISTING handleInputChange WITH THIS
@@ -39,9 +41,17 @@ const Register = ({ onRegister }) => {
             setPasswordsMatch(password === confirmPassword || confirmPassword === '');
         }
 
-        // Check password length in real-time
+        // Check password length and strength in real-time
         if (name === 'password') {
-            setPasswordLengthValid(value.length >= 6 || value.length === 0);
+            const lengthValid = value.length >= 8 || value.length === 0;
+            setPasswordLengthValid(lengthValid);
+            
+            // Check password strength requirements
+            const hasUppercase = /[A-Z]/.test(value);
+            const hasLowercase = /[a-z]/.test(value);
+            const hasDigit = /[0-9]/.test(value);
+            const strengthValid = (hasUppercase && hasLowercase && hasDigit) || value.length === 0;
+            setPasswordStrengthValid(strengthValid);
         }
 
         // Clear error when user starts typing
@@ -61,13 +71,24 @@ const Register = ({ onRegister }) => {
                 return;
             }
 
-            if (formData.password.length < 6) {
-                setError('Password must be at least 6 characters long');
+            if (formData.password.length < 8) {
+                setError('Password must be at least 8 characters long');
                 setIsLoading(false);
                 return;
             }
 
-            // PROTOTYPE: Use the onRegister function passed from App.jsx
+            // Validate password strength requirements
+            const hasUppercase = /[A-Z]/.test(formData.password);
+            const hasLowercase = /[a-z]/.test(formData.password);
+            const hasDigit = /[0-9]/.test(formData.password);
+            
+            if (!hasUppercase || !hasLowercase || !hasDigit) {
+                setError('Password must contain at least one uppercase letter, one lowercase letter, and one digit');
+                setIsLoading(false);
+                return;
+            }
+
+            // Use the onRegister function passed from App.jsx
             const result = await onRegister(
                 formData.email,
                 formData.password,
@@ -75,8 +96,13 @@ const Register = ({ onRegister }) => {
             );
 
             if (result.success) {
-                // Navigate to confimation page after successful registration
-                navigate('/confirmation');
+                if (result.requiresOTP) {
+                    // Navigate to confirmation page for OTP verification
+                    navigate('/confirmation');
+                } else {
+                    // Fallback - shouldn't happen with current flow
+                    navigate('/confirmation');
+                }
             } else {
                 setError(result.message || 'Registration failed. Please try again.');
             }
@@ -158,11 +184,11 @@ const Register = ({ onRegister }) => {
                                                 name="password"
                                                 value={formData.password}
                                                 onChange={handleInputChange}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03267F] focus:border-transparent pr-12 ${
-                                                    !passwordLengthValid && formData.password !== ''
-                                                        ? 'border-red-300 bg-red-50'
-                                                        : 'border-gray-200'
-                                                }`}
+                                                                                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03267F] focus:border-transparent pr-12 ${
+                                    (!passwordLengthValid || !passwordStrengthValid) && formData.password !== ''
+                                        ? 'border-red-300 bg-red-50'
+                                        : 'border-gray-200'
+                                }`}
                                                 placeholder="Enter your password"
                                                 required
                                                 disabled={isLoading}
@@ -171,20 +197,28 @@ const Register = ({ onRegister }) => {
                                                 {showPassword ? <IoIosEye /> : <IoIosEyeOff />}
                                             </p>
                                         </div>
-                                        {/* ADD THIS - Real-time password length indicator */}
+                                        {/* Password validation indicators */}
                                         {formData.password !== '' && (
-                                            <div className="mt-1 text-sm">
-                                                {passwordLengthValid ? (
-                                                    <span className="flex items-center">
-                                                    {/*removed lines for valid indicator*/}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-red-600 flex items-center">
-                                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
-                                                        </svg>
-                                                        Password must be at least 6 characters
-                                                    </span>
+                                            <div className="mt-1 text-sm space-y-1">
+                                                {(!passwordLengthValid || !passwordStrengthValid) && (
+                                                    <div className="text-red-600">
+                                                        {!passwordLengthValid && (
+                                                            <div className="flex items-center">
+                                                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                                                                </svg>
+                                                                At least 8 characters required
+                                                            </div>
+                                                        )}
+                                                        {!passwordStrengthValid && passwordLengthValid && (
+                                                            <div className="flex items-center">
+                                                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                                                                </svg>
+                                                                Must include uppercase, lowercase, and digit
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
@@ -237,7 +271,7 @@ const Register = ({ onRegister }) => {
                                     {/* Register Button */}
                                     <button
                                         type="submit"
-                                        disabled={isLoading || !passwordsMatch || !passwordLengthValid}
+                                        disabled={isLoading || !passwordsMatch || !passwordLengthValid || !passwordStrengthValid}
                                         className="w-full bg-[#03267F] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#022156] transition duration-200 mt-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                                     >
                                         {isLoading ? (

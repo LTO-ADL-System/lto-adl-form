@@ -1,12 +1,45 @@
-import React, { useState } from 'react';
-import NoApplicationContent from '../components/NoApplicationContent';
-import ApplicationInProgressContent from '../components/ApplicationInProgressContent';
-import PendingApprovalContent from '../components/PendingApprovalContent';
-import ApprovedApplicationContent from '../components/ApprovedApplicationContent';
+import React, { useState, useEffect } from 'react';
+import NoApplicationContent from '../components/NoApplicationContent.jsx';
+import ApplicationInProgressContent from '../components/ApplicationInProgressContent.jsx';
+import PendingApprovalContent from '../components/PendingApprovalContent.jsx';
+import ApprovedApplicationContent from '../components/ApprovedApplicationContent.jsx';
+import AppointmentsList from '../components/AppointmentsList.jsx';
+import { useApplications } from '../hooks/useApplications.js';
 import trash from '../assets/trash2-fill.svg';
 
 const Home = () => {
     const [applicationStatus, setApplicationStatus] = useState('none'); // 'none', 'inprogress', 'pending', 'approved'
+    const { applications, loading, fetchApplications } = useApplications(false); // Don't auto-fetch
+
+    // Fetch applications on component mount
+    useEffect(() => {
+        fetchApplications();
+    }, [fetchApplications]);
+
+    // Determine status based on user's applications
+    useEffect(() => {
+        if (loading) return;
+
+        if (!applications || applications.length === 0) {
+            setApplicationStatus('none');
+            return;
+        }
+
+        // Get the most recent application
+        const latestApplication = applications[0]; // Assuming applications are sorted by date desc
+        
+        // Map backend status to frontend dashboard status
+        const statusMapping = {
+            'ASID_PEN': 'pending',     // Pending
+            'ASID_SFA': 'pending',     // Subject for Approval  
+            'ASID_RSB': 'inprogress',  // Resubmission Required
+            'ASID_APR': 'approved',    // Approved
+            'ASID_REJ': 'none'         // Rejected - allow new application
+        };
+
+        const mappedStatus = statusMapping[latestApplication.application_status_id] || 'none';
+        setApplicationStatus(mappedStatus);
+    }, [applications, loading]);
 
     return (
         <div className="h-screen flex flex-col">
@@ -36,9 +69,19 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* Right Column - Recent Activity */}
+                            {/* Right Column - Appointments & Recent Activity */}
                             <div className="bg-white rounded-3xl shadow-md border border-gray-200 border-l-26 border-l-[#0433A9] py-8 px-8 flex flex-col min-h-0">
-                                <RecentActivity status={applicationStatus} />
+                                <div className="flex-1 min-h-0 space-y-6">
+                                    {/*/!* Appointments Section *!/*/}
+                                    {/*<div className="flex-1 min-h-0">*/}
+                                    {/*    <AppointmentsList />*/}
+                                    {/*</div>*/}
+                                    
+                                    {/* Recent Activity Section */}
+                                    <div className="border-t pt-6">
+                                        <RecentActivity status={applicationStatus} applications={applications} loading={loading} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -49,9 +92,14 @@ const Home = () => {
                                 <DashboardContent status={applicationStatus} />
                             </div>
 
+                            {/* Appointments Card */}
+                            <div className="bg-white rounded-3xl shadow-md border border-gray-200 py-6 px-6 flex flex-col flex-shrink-0" style={{ minHeight: '200px' }}>
+                                <AppointmentsList />
+                            </div>
+
                             {/* Recent Activity Card */}
                             <div className="bg-white rounded-3xl shadow-md border border-gray-200 border-l-4 border-l-[#0433A9] py-6 px-6 flex flex-col flex-shrink-0" style={{ minHeight: '200px' }}>
-                                <RecentActivity status={applicationStatus} />
+                                <RecentActivity status={applicationStatus} applications={applications} loading={loading} />
                             </div>
 
                             {/* Quick Links Card */}
@@ -95,78 +143,91 @@ const QuickLinks = () => (
     </div>
 );
 
-// Recent Activity Component
-const RecentActivity = ({ status }) => (
+// Recent Activity Component  
+const RecentActivity = ({ status, applications, loading }) => (
     <>
         <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-4 lg:mb-6 text-[#0433A9] flex-shrink-0">Recent Activity</h3>
 
-        {status === 'none' ? (
+        {status === 'none' || loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center min-h-0">
                 <img src={trash} alt="trash" className="w-12 h-12 lg:w-16 lg:h-16 mb-4 opacity-50"/>
-                <p className="text-[#E3E3E6] font-semibold text-sm lg:text-base">No Recent <br/>Activities</p>
+                <p className="text-[#E3E3E6] font-semibold text-sm lg:text-base">
+                    {loading ? 'Loading...' : 'No Recent Activities'}
+                </p>
             </div>
         ) : (
             <div className="space-y-3 lg:space-y-4 flex-1 min-h-0">
-                {/* Application Form */}
-                <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full ${status === 'inprogress' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
-                    <div>
-                        <p className="font-medium text-sm lg:text-base">Application Form</p>
-                        <p className="text-xs lg:text-sm text-blue-200">
-                            {status === 'inprogress' ? 'Editing' : 'Submitted on: 00/00/00'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* verification */}
-                {(status === 'pending' || status === 'approved') && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-px h-4 lg:h-6 bg-green-400 ml-1"></div>
-                        <div></div>
-                    </div>
-                )}
-
-                {(status === 'pending' || status === 'approved') && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
-                        <div>
-                            <p className="font-medium text-sm lg:text-base">Verification</p>
-                            <p className="text-xs lg:text-sm text-blue-200">Received On: 00/00/00</p>
-                        </div>
-                    </div>
-                )}
-
-                {/* approval */}
-                {status === 'approved' && (
-                    <>
-                        <div className="flex items-center gap-3">
-                            <div className="w-px h-4 lg:h-6 bg-green-400 ml-1"></div>
-                            <div></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
-                            <div>
-                                <p className="font-medium text-sm lg:text-base">Approval</p>
-                                <p className="text-xs lg:text-sm text-blue-200">Approved On: 00/00/00</p>
+                {applications && applications.length > 0 && (() => {
+                    const latestApplication = applications[0];
+                    const submissionDate = latestApplication.submission_date ? 
+                        new Date(latestApplication.submission_date).toLocaleDateString() : 'N/A';
+                    
+                    return (
+                        <>
+                            {/* Application Form */}
+                            <div className="flex items-center gap-3">
+                                <div className={`w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full ${status === 'inprogress' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                                <div className="text-[#03267F]">
+                                    <p className="font-medium text-sm lg:text-base">Application Form</p>
+                                    <p className="text-xs lg:text-sm">
+                                        {status === 'inprogress' ? 'Resubmission Required' : `Submitted on: ${submissionDate}`}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </>
-                )}
 
-                {status === 'pending' && (
-                    <>
-                        <div className="flex items-center gap-3">
-                            <div className="w-px h-4 lg:h-6 bg-blue-400 ml-1"></div>
-                            <div></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-blue-400"></div>
-                            <div>
-                                <p className="font-medium text-sm lg:text-base">Approval</p>
-                            </div>
-                        </div>
-                    </>
-                )}
+                            {/* verification */}
+                            {(status === 'pending' || status === 'approved') && (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-px h-4 lg:h-6 bg-green-400 ml-1"></div>
+                                    <div></div>
+                                </div>
+                            )}
+
+                            {(status === 'pending' || status === 'approved') && (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
+                                    <div className="text-[#03267F]">
+                                        <p className="font-medium text-sm lg:text-base">Verification</p>
+                                        <p className="text-xs lg:text-sm">Under Review</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* approval */}
+                            {status === 'approved' && (
+                                <>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-px h-4 lg:h-6 bg-green-400 ml-1"></div>
+                                        <div></div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-400"></div>
+                                        <div className="text-[#03267F]">
+                                            <p className="font-medium text-sm lg:text-base">Approval</p>
+                                            <p className="text-xs lg:text-sm">Application Approved!</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {status === 'pending' && (
+                                <>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-px h-4 lg:h-6 bg-blue-400 ml-1"></div>
+                                        <div></div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-blue-400"></div>
+                                        <div className="text-[#03267F]">
+                                            <p className="font-medium text-sm lg:text-base">Approval</p>
+                                            <p className="text-xs lg:text-sm">Pending Review</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    );
+                })()}
             </div>
         )}
     </>

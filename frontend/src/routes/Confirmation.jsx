@@ -5,17 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmationSuccess from '../components/RegistrationSuccess.jsx';
 import envelope from '../assets/envelope-fill.svg';
 
-const Confirmation = ({ onConfirmation }) => {
+const Confirmation = ({ onConfirmation, userEmail, isLoading: appLoading }) => {
     const [code, setCode] = useState(['', '', '', '']);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [verificationResult, setVerificationResult] = useState(null);
     const navigate = useNavigate();
-
-    // TODO: make it a random number sent in email
-    const correctCode = '1234';
-    // TODO: make the email in json or input of user
-    const userEmail = 'sampleemail@email.com';
 
     const handleInputChange = (index, value) => {
         // only allow single digit
@@ -37,12 +33,22 @@ const Confirmation = ({ onConfirmation }) => {
         // check if all fields are filled and validate
         const fullCode = newCode.join('');
         if (fullCode.length === 4) {
-            // first check if the code is correct (client-side validation)
-            if (fullCode === correctCode) {
-                // show success popup immediately without authentication
+            handleOTPVerification(fullCode);
+        }
+    };
+
+    const handleOTPVerification = async (otpCode) => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const result = await onConfirmation(otpCode);
+            
+            if (result.success) {
+                setVerificationResult(result);
                 setShowSuccess(true);
             } else {
-                setError('Invalid confirmation code. Please try again.');
+                setError(result.message || 'Invalid confirmation code. Please try again.');
                 // clear the code after a short delay
                 setTimeout(() => {
                     setCode(['', '', '', '']);
@@ -50,6 +56,17 @@ const Confirmation = ({ onConfirmation }) => {
                     if (firstInput) firstInput.focus();
                 }, 1000);
             }
+        } catch (error) {
+            console.error('OTP verification error:', error);
+            setError('Verification failed. Please try again.');
+            // clear the code after a short delay
+            setTimeout(() => {
+                setCode(['', '', '', '']);
+                const firstInput = document.getElementById('code-0');
+                if (firstInput) firstInput.focus();
+            }, 1000);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -62,36 +79,37 @@ const Confirmation = ({ onConfirmation }) => {
     };
 
     const handleResendCode = () => {
-        // TODO: add your resend code logic
+        // TODO: Implement resend OTP functionality
         console.log('Resending code...');
         setError('');
+        alert('Resend functionality will be implemented soon. Please check your email for the existing OTP.');
     };
 
-    const handleSuccessContinue = async () => {
+    const handleSuccessContinue = () => {
         setShowSuccess(false);
-        setIsLoading(true);
-
-        // authenticate the user when they click continue
-        if (onConfirmation) {
-            try {
-                const result = await onConfirmation(userEmail, correctCode);
-                if (result.success) {
-                    // authentication successful, App.jsx will handle navigation to /home
-                    console.log('Authentication successful');
-                } else {
-                    // this shouldn't happen since we already validated the code
-                    setError(result.message || 'Authentication failed. Please try again.');
-                }
-            } catch (err) {
-                setError('Authentication failed. Please try again.');
-            }
+        
+        // Navigate based on the action (signup or login) and user type
+        if (verificationResult?.action === 'signup') {
+            // For signup, redirect to landing page as per requirements
+            navigate('/');
         } else {
-            // fallback - navigate manually if onConfirmation is not provided
-            navigate('/home');
+            // For login, check if user is admin
+            const isAdmin = verificationResult?.user?.isAdmin || verificationResult?.user?.email === 'madalto.official@gmail.com';
+            if (isAdmin) {
+                // Redirect admin users to dashboard
+                navigate('/dashboard');
+            } else {
+                // Redirect regular users to home page
+                navigate('/home');
+            }
         }
-
-        setIsLoading(false);
     };
+
+    // Redirect to signin if no user email (meaning no pending auth)
+    if (!userEmail) {
+        navigate('/signin');
+        return null;
+    }
 
     return (
         <>
@@ -143,14 +161,14 @@ const Confirmation = ({ onConfirmation }) => {
                                         value={digit}
                                         onChange={(e) => handleInputChange(index, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(index, e)}
-                                        disabled={isLoading}
+                                        disabled={isLoading || appLoading}
                                         className={`w-14 h-14 text-center text-xl font-semibold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03267F] ${
                                             digit
                                                 ? 'border-[#03267F] bg-blue-50'
                                                 : error
                                                     ? 'border-red-300'
                                                     : 'border-gray-300'
-                                        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        } ${isLoading || appLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         //we can add a placeholder here
                                         placeholder=" "
                                     />
@@ -162,7 +180,7 @@ const Confirmation = ({ onConfirmation }) => {
                                 <span className="text-gray-600 text-sm">Didn't receive a code? </span>
                                 <button
                                     onClick={handleResendCode}
-                                    disabled={isLoading}
+                                    disabled={isLoading || appLoading}
                                     className="text-[#03267F] text-sm font-medium hover:underline disabled:opacity-50"
                                 >
                                     Resend Code

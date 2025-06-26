@@ -1,13 +1,26 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Madalto from "../assets/madalto.svg";
 import houseFill from "../assets/house-fill.svg";
 import applicantsIcon from "../assets/applicants.svg";
 import bellFill from "../assets/bell-fill.svg";
 import gearFill from "../assets/gear-fill.svg";
+import authService from "../services/authService";
 
 const AdminNavBar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear tokens and user data
+    authService.logout();
+
+    // Use navigate with replace to update path
+    navigate("/", { replace: true });
+
+    // Force full reload so that App re-runs its auth check and shows landing page
+    window.location.reload();
+  };
 
   const isActive = (path) => location.pathname === path;
 
@@ -24,7 +37,7 @@ const AdminNavBar = () => {
         {/* Navigation */}
         <Link
           to="/dashboard"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+          className="group flex items-center gap-2 py-1 px-3 text-md font-semibold transition duration-300 relative"
         >
           <img src={houseFill} alt="Dashboard" className="w-5 h-5" />
           Dashboard
@@ -35,7 +48,7 @@ const AdminNavBar = () => {
         </Link>
         <Link
           to="/applicants"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+          className="group flex items-center gap-2 py-1 px-3 text-md font-semibold transition duration-300 relative"
         >
           <img src={applicantsIcon} alt="Applicants" className="w-5 h-5" />
           Applicants
@@ -48,20 +61,13 @@ const AdminNavBar = () => {
 
       {/* Right side: Notifications and Settings */}
       <div className="flex items-center gap-5">
-        <Link
-          to="#"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative text-white hover:text-gray-200"
         >
-          <img src={bellFill} alt="Notifications" className="w-5 h-5" />
-          Notifications
-        </Link>
-        <Link
-          to="#"
-          className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
-        >
-          <img src={gearFill} alt="Settings" className="w-5 h-5" />
-          Settings
-        </Link>
+          Logout
+        </button>
       </div>
     </nav>
   );

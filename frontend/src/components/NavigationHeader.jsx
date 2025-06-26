@@ -1,12 +1,20 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Madalto from '../assets/madalto.svg'
 
-const NavigationHeader = () => {
+const NavigationHeader = ({ onLogout, currentUser }) => {
     const location = useLocation();
+    const navigate = useNavigate();
 
     const isActive = (path) => {
         return location.pathname === path;
+    };
+
+    const handleLogout = async (e) => {
+        e.preventDefault();
+
+        await onLogout();
+        navigate('/');
     };
 
     return (
@@ -21,7 +29,7 @@ const NavigationHeader = () => {
                 {/*Link to Home*/}
                 <Link
                     to="/"
-                    className="group flex items-center gap-2 py-1 px-3 text-md font-light transition duration-300 relative"
+                    className="group flex items-center gap-2 py-1 px-3 text-md font-semibold transition duration-300 relative"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +49,7 @@ const NavigationHeader = () => {
                 {/*Link to Application*/}
                 <Link
                     to="/application"
-                    className="group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative"
+                    className="group flex items-center gap-2 py-1 px-3 text-md font-semibold rounded-2xl transition duration-300 relative"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -61,25 +69,22 @@ const NavigationHeader = () => {
 
             {/*right div*/}
             <div className="flex items-center gap-5">
-                {/*Link to Profile*/}
-                <Link
-                    to="/profile"
-                    className="group flex items-center gap-2 py-1 px-3 text-md font-light rounded-2xl transition duration-300 relative"
-                >
+                {/*Logout Button*/}
+                <button
+                    onClick={handleLogout}
+                    className="group flex items-center gap-2 px-3 text-md rounded-2xl !py-0 transition duration-300 relative text-white !focus:outline-none !hover:outline-none !border-none"                >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="w-4.5 h-4.5 transition-colors duration-300"
                         viewBox="0 0 24 24"
+                        fill="none"
                     >
-                        <path d="M2 24C2 24 0 24 0 22C0 20 2 14 12 14C22 14 24 20 24 22C24 24 22 24 22 24H2Z" fill="white"/>
-                        <path d="M12 12C15.3137 12 18 9.31371 18 6C18 2.68629 15.3137 0 12 0C8.68629 0 6 2.68629 6 6C6 9.31371 8.68629 12 12 12Z" fill="white"/>
+                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16 17L21 12L16 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M21 12H9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    Profile
-                    {/*active tab indicator */}
-                    {isActive('/profile') && (
-                        <div className="absolute bottom-[-18px] left-0 right-0 h-1 bg-white rounded-t-full"></div>
-                    )}
-                </Link>
+                    Logout
+                </button>
             </div>
         </nav>
     );

@@ -95,7 +95,7 @@
           "name": "organs",
           "label": "Organs",
           "type": "select",
-          "required": false,
+          "required": true,
           "placeholder": "Select Organs",
           "dependsOn": {
             "field": "organDonor",
@@ -107,12 +107,24 @@
               "label": "All Organs"
             },
             {
+              "value": "kidney",
+              "label": "Kidney"
+            },
+            {
               "value": "heart",
               "label": "Heart"
             },
             {
-              "value": "kidney",
-              "label": "Kidney"
+              "value": "cornea",
+              "label": "Cornea"
+            },
+            {
+              "value": "eyes",
+              "label": "Eyes"
+            },
+            {
+              "value": "pancreas",
+              "label": "Pancreas"
             },
             {
               "value": "liver",
@@ -121,6 +133,56 @@
             {
               "value": "lungs",
               "label": "Lungs"
+            },
+            {
+              "value": "bones",
+              "label": "Bones"
+            },
+            {
+              "value": "skin",
+              "label": "Skin"
+            }
+          ],
+          "gridClass": "md:col-span-1"
+        },
+        {
+          "name": "blood_type",
+          "label": "Blood type",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select Blood Type",
+          "options": [
+            {
+              "value": "Apos",
+              "label": "A+"
+            },
+            {
+              "value": "Aneg",
+              "label": "A-"
+            },
+             {
+              "value": "Bpos",
+              "label": "B+"
+            },
+            {
+              "value": "Bneg",
+              "label": "B-"
+            },
+            {
+              "value": "ABpos",
+              "label": "AB+"
+            },
+            {
+              "value": "ABneg",
+              "label": "AB-"
+            },
+            {
+              "value": "Opos",
+              "label": "O+"
+            },
+            {
+              "value": "Oneg",
+              "label": "O-"
             }
           ],
           "gridClass": "md:col-span-1"
@@ -171,20 +233,16 @@
           "placeholder": "Driving Skill Acquisition",
           "options": [
             {
-              "value": "new",
-              "label": "New Driver"
+              "value": "driving_school",
+              "label": "Driving School"
             },
             {
-              "value": "renewal",
-              "label": "License Renewal"
+              "value": "private",
+              "label": "Private Licensed Person with DL. No\n"
             },
             {
-              "value": "additional",
-              "label": "Additional Category"
-            },
-            {
-              "value": "conversion",
-              "label": "License Conversion"
+              "value": "tesda",
+              "label": "TESDA"
             }
           ],
           "gridClass": "md:col-span-1"
@@ -193,7 +251,7 @@
           "name": "driverLicenseNumber",
           "label": "Driver's License Number",
           "type": "text",
-          "required": true,
+          "required": false,
           "placeholder": "A00-25-000000",
           "gridClass": "md:col-span-1"
         },

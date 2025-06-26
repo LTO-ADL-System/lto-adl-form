@@ -38,25 +38,28 @@ class LicenseDetails(BaseModel):
     
 class PersonalInfo(BaseModel):
     """Complete personal information for application"""
-    family_name: str
-    first_name: str
+    family_name: Optional[str] = None
+    first_name: Optional[str] = None
     middle_name: Optional[str] = None
-    address: str
-    contact_num: str
+    address: Optional[str] = None
+    contact_num: Optional[str] = None
     nationality: str = "Filipino"
-    birthdate: date
-    birthplace: str
-    height: float
-    weight: float
-    eye_color: str
-    civil_status: CivilStatus
-    educational_attainment: EducationalAttainment
-    blood_type: BloodType
-    sex: Sex
+    birthdate: Optional[date] = None
+    birthplace: Optional[str] = None
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    eye_color: Optional[str] = None
+    civil_status: Optional[CivilStatus] = None
+    educational_attainment: Optional[EducationalAttainment] = None
+    blood_type: Optional[BloodType] = None
+    sex: Optional[Sex] = None
+    tin: Optional[str] = None  # Tax Identification Number - 9 digits
     is_organ_donor: bool = False
 
     @validator('contact_num')
     def validate_phone(cls, v):
+        if not v:
+            return v
         import re
         if not re.match(r'^\+63\d{10}$', v):
             raise ValueError('Phone number must be in format +63XXXXXXXXXX')
@@ -64,24 +67,38 @@ class PersonalInfo(BaseModel):
     
     @validator('height')
     def validate_height(cls, v):
+        if v is None:
+            return v
         if v <= 0 or v > 300:
             raise ValueError('Height must be between 0 and 300 cm')
         return v
     
     @validator('weight')
     def validate_weight(cls, v):
+        if v is None:
+            return v
         if v <= 0 or v > 500:
             raise ValueError('Weight must be between 0 and 500 kg')
         return v
     
     @validator('birthdate')
     def validate_age(cls, v):
+        if v is None:
+            return v
         today = date.today()
         age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
         if age < 15:
             raise ValueError('Applicant must be at least 15 years old')
         if age > 100:
             raise ValueError('Invalid birthdate')
+        return v
+    
+    @validator('tin')
+    def validate_tin(cls, v):
+        if v is not None:
+            import re
+            if not re.match(r'^[0-9]{9}$', v):
+                raise ValueError('TIN must be exactly 9 digits')
         return v
 
 class CompleteApplicationCreate(BaseModel):
@@ -110,6 +127,9 @@ class CompleteApplicationCreate(BaseModel):
     # Family information
     family_info: Optional[List[dict]] = []
     
+    # Additional data for driving skills, organ donation, etc.
+    additional_data: Optional[dict] = {}
+    
     @validator('clutch_types')
     def validate_clutch_types(cls, v, values):
         if 'vehicle_categories' in values:
@@ -119,13 +139,9 @@ class CompleteApplicationCreate(BaseModel):
     
     @validator('documents')
     def validate_required_documents(cls, v, values):
-        # Basic validation - can be enhanced based on application type
-        required_docs = ['DTID_BIRTH_CERT', 'DTID_VALID_ID']  # Example required docs
-        provided_doc_types = [doc.document_type_id for doc in v]
-        
-        # For now, just ensure some documents are provided
-        if len(v) < 1:
-            raise ValueError('At least one document must be provided')
+        # Allow empty documents list for now - validation can be done later
+        # if len(v) < 1:
+        #     raise ValueError('At least one document must be provided')
         return v
 
 class CompleteApplicationResponse(BaseModel):

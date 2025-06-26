@@ -1,0 +1,95 @@
+{
+  "personal_details": {
+    "family_name": "Dela Cruz",
+    "first_name": "Juan Carlos",
+    "middle_name": "Santos",
+    "sex": "Male",
+    "birthdate": "1995-03-15",
+    "civil_status": "Single",
+    "height": 175,
+    "weight": 70,
+    "contact_num": "+639123456789",
+    "nationality": "Filipino",
+    "educational_attainment": "College",
+    "birthplace": "Manila, Philippines",
+    "tin": "123456789",
+    
+    "father_family_name": "Dela Cruz",
+    "father_first_name": "Roberto",
+    "father_middle_name": "Garcia",
+    "father_deceased": false,
+    
+    "mother_family_name": "Santos",
+    "mother_first_name": "Maria",
+    "mother_middle_name": "Lopez",
+    "mother_deceased": false,
+    
+    "spouse_family_name": "",
+    "spouse_first_name": "",
+    "spouse_middle_name": "",
+    "spouse_deceased": false,
+    
+    "region": "National Capital Region (NCR)",
+    "province": "Metro Manila",
+    "municipality": "Manila",
+    "zip_code": "1000",
+    "barangay": "Ermita",
+    "street_address": "P. Burgos Street",
+    "house_address": "Unit 123, ABC Building",
+    
+    "employerBusinessName": "ABC Corporation",
+    "employerTelephone": "+6328123456",
+    "employerAddress": "Makati Business District, Makati City",
+    
+    "emergencyContactName": "Maria Dela Cruz",
+    "emergencyContactNumber": "+639987654321",
+    "sameAsApplicantAddress": true
+  },
+  
+  "license_details": {
+    "newApplication": true,
+    "additionalLicense": false,
+    "conversionFromForeign": false,
+    "conversionFromMilitary": false,
+    "renewalOfExpiring": false,
+    "renewalOfExpired": false,
+    "duplicateLicense": false,
+    "revisionOfRecords": false,
+    
+    "driverLicenseNumber": "",
+    
+    "organDonor": "yes",
+    "organs": ["heart", "kidney"],
+    "conditions": ["none"],
+    "blood_type": "A+",
+    "drivingSkill": "driving_school",
+    
+    "vehicleCategories": ["B"],
+    "clutchTypes": ["Manual"]
+  },
+  
+  "documents": {
+    "uploadedFiles": {
+      "validID": {
+        "name": "national_id.pdf",
+        "type": "application/pdf",
+        "size": 1024000
+      },
+      "medicalCertificate": {
+        "name": "medical_cert.pdf", 
+        "type": "application/pdf",
+        "size": 512000
+      },
+      "pdcCertificate": {
+        "name": "pdc_cert.pdf",
+        "type": "application/pdf", 
+        "size": 768000
+      },
+      "studentDriversPermit": {
+        "name": "student_permit.pdf",
+        "type": "application/pdf",
+        "size": 256000
+      }
+    }
+  }
+} 
