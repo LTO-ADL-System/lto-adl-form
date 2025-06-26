@@ -7,7 +7,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: red;
+  background-color: whitesmoke;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,14 +15,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* a {*/
+/*a {*/
 /*  font-weight: 500;*/
 /*  !*color: white;*!*/
 /*  !*text-decoration: none;*!*/
 /*}*/
 /*a:hover {*/
 /*  color: #03267F;*/
-/*} */
+/*}*/
 
 body {
   margin: 0;
@@ -160,4 +160,16 @@ button:focus-visible {
   display: none;
   width: 0;
   height: 0;
+}
+button:hover,
+button:focus,
+button:focus-visible {
+  border-color: #03267F !important;
+  outline-color: #03267F !important;
+}
+
+/* For custom checkboxes, if you use them */
+input[type="checkbox"]:focus {
+  outline: 2px solid #03267F !important;
+  border-color: #03267F !important;
 }
