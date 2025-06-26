@@ -251,7 +251,7 @@
           "name": "driverLicenseNumber",
           "label": "Driver's License Number",
           "type": "text",
-          "required": true,
+          "required": false,
           "placeholder": "A00-25-000000",
           "gridClass": "md:col-span-1"
         },
